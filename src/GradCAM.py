@@ -4,12 +4,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils import data
 from torchvision import datasets
+from torchvision import transforms as T
+
 from Models import ResNet, VGG
 from os import makedirs
 from os.path import exists
 from PIL import Image
 
 def grad_cam(model_name, img_path):
+
     # choose working model
     if model_name == "resnet50":
         # define model
@@ -20,26 +23,17 @@ def grad_cam(model_name, img_path):
     else:
         exit("Please choose a valid model.")
     print(f"Model: {model_name}")
-
-    # check input folder exists
-    # if not exists('./data'):
-        # exit("Please create a folder named 'data' with inside one folder named 'test' with 1 image.")
-
-    # set the evaluation mode
+    # set model to evaluation mode
     model.eval()
-    # define 1 image dataset
-    # dataset = datasets.ImageFolder(root='./data/', transform=model.transforms)
-    # dataloader = data.DataLoader(dataset=dataset, shuffle=False, batch_size=1)
 
     # open image
     img = Image.open(img_path)
     # preprocess image
-    img = model.transforms(img)
-    # add batch dimension
-    img = torch.unsqueeze(img, dim=0)
+    img = model.transforms(img).unsqueeze(dim=0)
     # predict image
     pred = model(img)
-    print("Predicted image label:",pred.argmax(dim=1))
+    print(f"Predicted image label: {pred.argmax(dim=1)} with confidence: {torch.max(pred)} %")
+
     # backward pass
     pred[:, 0].backward()
     # get the gradients
@@ -53,12 +47,11 @@ def grad_cam(model_name, img_path):
     # weight the channels by corresponding gradients
     for i in range(512):
         activations[:, i, :, :] *= pooled_gradients[i]
+
     # average the channels of the activations
     heatmap = torch.mean(activations, dim=1).squeeze()
-
-    # expression (2) from https://arxiv.org/pdf/1610.02391.pdf
+    # relu as in original publication
     heatmap = np.maximum(heatmap, 0)
-
     # normalize the heatmap
     heatmap /= torch.max(heatmap)
 
@@ -73,9 +66,12 @@ def grad_cam(model_name, img_path):
     heatmap = np.uint8(255 * heatmap)
     heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
     superimposed_img = heatmap * 0.4 + img
+    # save image and heatmap
     cv2.imwrite(f'./{out_dir}/map.jpg', superimposed_img)
     cv2.imwrite(f'./{out_dir}/heatmap.jpg', heatmap)
     
 if __name__ == "__main__":
-    grad_cam("resnet50","./data/test/2.JPEG")
+    grad_cam("vgg19","./data/test/cropped_input_0.png")
+    # grad_cam("vgg19","./data/test/noisy_input_0.png")
+
     # grad_cam("vgg19","./data/test/2.JPEG")

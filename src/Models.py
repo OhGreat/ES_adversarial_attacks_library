@@ -44,8 +44,10 @@ class ResNet(GenericModel):
     def forward(self, x):
         # model before classification head
         x = self.get_activations(x)
+        
         # register the hook
         h = x.register_hook(self.activations_hook)
+
         # avg pooling + classification head
         x = self.resnet.avgpool(x)
         x = x.view((1, 2048))
@@ -91,7 +93,6 @@ class VGG(GenericModel):
     
         # model preprocessing for images
         self.transforms = self.weights.transforms()
-
         
     def forward(self, x):
         x = self.features_conv(x)
@@ -99,9 +100,10 @@ class VGG(GenericModel):
         # register the hook
         h = x.register_hook(self.activations_hook)
         
-        # apply the remaining pooling
+        # apply the max pooling
         x = self.max_pool(x)
         x = x.view((1, -1))
+        # pass image to classification head
         x = self.classifier(x)
         return x
     
