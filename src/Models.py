@@ -9,25 +9,32 @@ class ResNet(nn.Module):
         # define resnet and weights
         self.weights = ResNet50_Weights.DEFAULT
         self.resnet = resnet50(weights=self.weights)
+        print("self",self)
+        print()
 
         # model preprocessing
         self.transforms = self.weights.transforms()
 
-        # last conv activation
-        print(self.resnet.layer4[2].conv3)
-        self.feat_conv = self.resnet.layer4[2].bn3
-
         # placeholder for the gradients
         self.gradients = None
-
-        self.classifier = self.resnet.parameters()
 
     def activations_hook(self, grad):
         self.gradients = grad
 
-
     def forward(self, x):
-        return self.resnet(x)
+        # model before classification head
+        x = self.get_activations(x)
+
+        # register the hook
+        h = x.register_hook(self.activations_hook)
+
+        # avg pooling + classification head
+        x = self.resnet.avgpool(x)
+        x = x.view((1, 2048))
+        x = self.resnet.fc(x)
+
+        return x
+
 
 
     def get_activations_gradient(self):
@@ -35,7 +42,15 @@ class ResNet(nn.Module):
 
     # method for the activation exctraction
     def get_activations(self, x):
-        return self.feat_conv(x)
+        x = self.resnet.conv1(x)
+        x = self.resnet.bn1(x)
+        x = self.resnet.relu(x)
+        x = self.resnet.maxpool(x)
+        x = self.resnet.layer1(x)
+        x = self.resnet.layer2(x)
+        x = self.resnet.layer3(x)
+        x = self.resnet.layer4(x)
+        return x
 
 
 class VGG(nn.Module):
@@ -54,6 +69,7 @@ class VGG(nn.Module):
         self.max_pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
         
         # get the classifier of the vgg19
+        # it is simply the last sequential block
         self.classifier = self.vgg.classifier
         print("VGG classifier:",self.classifier)
         
