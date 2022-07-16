@@ -11,7 +11,7 @@ from os import makedirs
 from os.path import exists
 from PIL import Image
 
-def grad_cam(model_name, img_path):
+def grad_cam(model_name, img_path, result_dir="results", exp_name="temp"):
 
     # choose working model
     if model_name == "resnet50":
@@ -50,28 +50,40 @@ def grad_cam(model_name, img_path):
 
     # average the channels of the activations
     heatmap = torch.mean(activations, dim=1).squeeze()
-    # relu as in original publication
+    # apply relu as in original publication
     heatmap = np.maximum(heatmap, 0)
     # normalize the heatmap
     heatmap /= torch.max(heatmap)
 
-    # control that results directory exists
-    out_dir = './results'
-    if not exists(out_dir):
-        makedirs(out_dir)
+    # make sure results directory exists
+    if not exists(result_dir):
+        makedirs(result_dir)
+    # create heatmap and combined image
+    heatmap_img, heated_img = create_images(heatmap=heatmap.numpy(), img_path=img_path)
+    # save image and heatmap
+    cv2.imwrite(f'./{result_dir}/{exp_name}_combined.jpg', heated_img)
+    cv2.imwrite(f'./{result_dir}/{exp_name}_heatmap.jpg', heatmap_img)
 
+def create_images(heatmap, img_path):
     # create superimposed image
     img = cv2.imread(img_path)
-    heatmap = cv2.resize(heatmap.numpy(), (img.shape[1], img.shape[0]))
+    heatmap = cv2.resize(heatmap, (img.shape[1], img.shape[0]))
     heatmap = np.uint8(255 * heatmap)
     heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
-    superimposed_img = heatmap * 0.4 + img
-    # save image and heatmap
-    cv2.imwrite(f'./{out_dir}/map.jpg', superimposed_img)
-    cv2.imwrite(f'./{out_dir}/heatmap.jpg', heatmap)
-    
+    heated_image = heatmap * 0.4 + img
+
+    return heatmap, heated_image
+
+
 if __name__ == "__main__":
-    grad_cam("vgg19","./data/test/cropped_input_0.png")
-    # grad_cam("vgg19","./data/test/noisy_input_0.png")
+    # VGG models
+    grad_cam(model_name="vgg19",img_path="./data/test/cropped_input_0.png", 
+            result_dir="results", exp_name="tench" )
+    grad_cam(model_name="vgg19",img_path="./data/test/noisy_input_0.png", 
+            result_dir="results", exp_name="tench_noise" )
+
+    # ResNet models
+    # grad_cam(model_name="resnet50",img_path="./data/test/noisy_input_0.png", 
+    #         result_dir="results", exp_name="tench" )
 
     # grad_cam("vgg19","./data/test/2.JPEG")
