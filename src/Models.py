@@ -1,3 +1,4 @@
+from turtle import forward
 import torch
 from torch import nn
 
@@ -27,6 +28,53 @@ class GenericModel(nn.Module):
         return self.gradients
 
     
+class Xception(GenericModel):
+    def __init__(self):
+        super(Xception, self).__init__()
+        from torchvision.models import inception_v3, Inception_V3_Weights
+        self.weights = Inception_V3_Weights.DEFAULT
+        self.model = inception_v3(weights=self.weights)
+
+        self.transforms = self.weights.transforms()
+
+        self.gradients = None
+
+        print(self.model)
+
+    def get_activations(self, x):
+        """ Method for the activation exctraction
+        """
+        x = self.model.Conv2d_1a_3x3(x)
+        x = self.model.Conv2d_2a_3x3(x)
+        x = self.model.Conv2d_2b_3x3(x)
+        x = self.model.maxpool1(x)
+        x = self.model.Conv2d_3b_1x1(x)
+        x = self.model.Conv2d_4a_3x3(x)
+        x = self.model.maxpool2(x)
+        x = self.model.Mixed_5b(x)
+        x = self.model.Mixed_5c(x)
+        x = self.model.Mixed_5d(x)
+        x = self.model.Mixed_6a(x)
+        x = self.model.Mixed_6b(x)
+        x = self.model.Mixed_6c(x)
+        x = self.model.Mixed_6d(x)
+        x = self.model.Mixed_6e(x)
+        #x = self.model.aux_logits(x)
+        x = self.model.Mixed_7a(x)
+        x = self.model.Mixed_7b(x)
+        x = self.model.Mixed_7c(x)
+        return x
+
+    def forward(self, x):
+        x = self.get_activations(x)
+        h = x.register_hook(self.activations_hook)
+        x = self.model.avgpool(x)
+        x = x.view((1,-1))
+        x = self.model.fc(x)
+
+        return x
+
+
 class ResNet(GenericModel):
     def __init__(self):
         super(ResNet, self).__init__()
@@ -50,7 +98,7 @@ class ResNet(GenericModel):
 
         # avg pooling + classification head
         x = self.resnet.avgpool(x)
-        x = x.view((1, 2048))
+        x = x.view((1, -1))
         x = self.resnet.fc(x)
 
         return x

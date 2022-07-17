@@ -6,7 +6,7 @@ from torch.utils import data
 from torchvision import datasets
 from torchvision import transforms as T
 
-from Models import ResNet, VGG
+from Models import ResNet, VGG, Xception
 from os import makedirs
 from os.path import exists
 from PIL import Image
@@ -20,6 +20,8 @@ def grad_cam(model_name, img_path, result_dir="results", exp_name="temp"):
     elif model_name == "vgg19":
         # define model
         model = VGG()
+    elif model_name == "xception_v3":
+        model = Xception()
     else:
         exit("Please choose a valid model.")
     print(f"Model: {model_name}")
@@ -77,13 +79,12 @@ def create_images(heatmap, img_path):
 
 if __name__ == "__main__":
     # VGG models
-    grad_cam(model_name="vgg19",img_path="./data/test/cropped_input_0.png", 
-            result_dir="results", exp_name="tench" )
-    grad_cam(model_name="vgg19",img_path="./data/test/noisy_input_0.png", 
-            result_dir="results", exp_name="tench_noise" )
-
+    # grad_cam(model_name="vgg19",img_path="./data/test/cropped_input_0.png", 
+    #         result_dir="results", exp_name="tench" )
+    # grad_cam(model_name="vgg19",img_path="./data/test/noisy_input_0.png", 
+    #         result_dir="results", exp_name="tench_noise" )
+    grad_cam(model_name="xception_v3",img_path="./data/test/noisy_input_0.png", 
+            result_dir="results", exp_name="tench_xcept" )
     # ResNet models
     # grad_cam(model_name="resnet50",img_path="./data/test/noisy_input_0.png", 
     #         result_dir="results", exp_name="tench" )
-
-    # grad_cam("vgg19","./data/test/2.JPEG")
