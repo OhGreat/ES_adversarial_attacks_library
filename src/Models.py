@@ -1,11 +1,15 @@
-from turtle import forward
-import torch
 from torch import nn
 
 class GenericModel(nn.Module):
     def __init__(self):
         super(GenericModel, self).__init__()
+        self.model = None
         self.gradients = None
+        self.input_shape = None
+    
+    def simple_eval(self, x):
+        x = self.model(x)
+        return x.softmax(dim=1)
 
     def forward(self):
         pass
@@ -31,15 +35,16 @@ class GenericModel(nn.Module):
 class Xception(GenericModel):
     def __init__(self):
         super(Xception, self).__init__()
+        # define model
         from torchvision.models import inception_v3, Inception_V3_Weights
-        self.weights = Inception_V3_Weights.DEFAULT
+        self.weights = Inception_V3_Weights.IMAGENET1K_V1
         self.model = inception_v3(weights=self.weights)
-
+        # expected input shape
+        self.input_shape = (299,299,3)
+        # model image preprocessing transformation
         self.transforms = self.weights.transforms()
-
+        # gradients placeholder
         self.gradients = None
-
-        print(self.model)
 
     def get_activations(self, x):
         """ Method for the activation exctraction
@@ -80,8 +85,8 @@ class ResNet(GenericModel):
         super(ResNet, self).__init__()
         # define resnet and weights
         from torchvision.models import resnet50, ResNet50_Weights
-        self.weights = ResNet50_Weights.DEFAULT
-        self.resnet = resnet50(weights=self.weights)
+        self.weights = ResNet50_Weights.IMAGENET1K_V2
+        self.model = resnet50(weights=self.weights)
 
         # model preprocessing of input images
         self.transforms = self.weights.transforms()
@@ -97,23 +102,23 @@ class ResNet(GenericModel):
         h = x.register_hook(self.activations_hook)
 
         # avg pooling + classification head
-        x = self.resnet.avgpool(x)
+        x = self.model.avgpool(x)
         x = x.view((1, -1))
-        x = self.resnet.fc(x)
+        x = self.model.fc(x)
 
         return x
 
     def get_activations(self, x):
         """ Method for the activation exctraction
         """
-        x = self.resnet.conv1(x)
-        x = self.resnet.bn1(x)
-        x = self.resnet.relu(x)
-        x = self.resnet.maxpool(x)
-        x = self.resnet.layer1(x)
-        x = self.resnet.layer2(x)
-        x = self.resnet.layer3(x)
-        x = self.resnet.layer4(x)
+        x = self.model.conv1(x)
+        x = self.model.bn1(x)
+        x = self.model.relu(x)
+        x = self.model.maxpool(x)
+        x = self.model.layer1(x)
+        x = self.model.layer2(x)
+        x = self.model.layer3(x)
+        x = self.model.layer4(x)
         return x
 
 
@@ -123,18 +128,18 @@ class VGG(GenericModel):
         from torchvision.models import vgg19, VGG19_Weights
 
         # get the pretrained VGG19 network
-        self.weights = VGG19_Weights.DEFAULT
-        self.vgg = vgg19(weights=self.weights)
+        self.weights = VGG19_Weights.IMAGENET1K_V1
+        self.model = vgg19(weights=self.weights)
         
         # all layers before classification head
-        self.features_conv = self.vgg.features[:36]
+        self.features_conv = self.model.features[:36]
         
         # get the max pool before classification head
         self.max_pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
         
         # get the classifier of the vgg19
         # it is simply the last sequential block
-        self.classifier = self.vgg.classifier
+        self.classifier = self.model.classifier
         
         # placeholder for the gradients
         self.gradients = None
