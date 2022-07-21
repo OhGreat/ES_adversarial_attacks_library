@@ -24,21 +24,21 @@ def grad_cam(model_name, img_path, true_label=None, result_dir="results", exp_na
         model = Xception()
     else:
         exit("Please choose a valid model.")
-    print(f"Model: {model_name}")
+    print(f"\nModel: {model_name}")
     # set model to evaluation mode
     model.eval()
 
     # open image
     img = Image.open(img_path)
-    print(f"Initial img shape: {np.array(img).shape}, max: {np.array(img).max()}, min: {np.array(img).min()}")
+    # print(f"Initial img shape: {np.array(img).shape}, max: {np.array(img).max()}, min: {np.array(img).min()}")
     # preprocess image
     img = model.transforms(img).unsqueeze(dim=0)
-    print(f"Processed img shape: {img.shape}")
+    # print(f"Processed img shape: {img.shape}")
     # predict image
     pred = model.simple_eval(img)
-    print(f"\nPredicted image label: {pred.argmax().item()} with confidence: {torch.max(pred)*100} %\n")
+    print(f"Predicted image label: {pred.argmax().item()} with confidence: {torch.max(pred).item()*100} %")
     if true_label is not None:
-        print(f"\nOriginal label: {true_label} confidence: {pred[:, true_label].item()*100} %\n")
+        print(f"Original label: {true_label} confidence: {pred[:, true_label].item()*100} %")
 
     # pass image through custom forward pass 
     # to collect gradients of interest
@@ -51,9 +51,9 @@ def grad_cam(model_name, img_path, true_label=None, result_dir="results", exp_na
     pooled_gradients = torch.mean(gradients, dim=[0, 2, 3])
     # get the activations until the last convolutional layer
     activations = model.get_activations(img).detach()
-    print("gradients shape:",gradients.shape,"activations shape:",activations.shape)
+    # print("gradients shape:",gradients.shape,"activations shape:",activations.shape)
     # weight the channels by corresponding gradients
-    for i in range(512):
+    for i in range(gradients.shape[1]):
         activations[:, i, :, :] *= pooled_gradients[i]
 
     # average the channels of the activations
@@ -96,9 +96,12 @@ if __name__ == "__main__":
     #         result_dir="results/xception", exp_name="tench_xcept" )
     # grad_cam(model_name="xception_v3",img_path="./data/test/shark.JPEG", 
     #         result_dir="results/xception", exp_name="shark_xcept" )
-    grad_cam(model_name="xception_v3",img_path="./data/test/temp.png",
+    grad_cam(model_name="xception_v3",img_path="temp_orig.png",
             true_label=0,
-            result_dir="results/xception", exp_name="new_atk" )
+            result_dir="results/xception/tench", exp_name="orig" )
+    grad_cam(model_name="xception_v3",img_path="temp_atk_img.png",
+            true_label=0,
+            result_dir="results/xception/tench", exp_name="noise" )
     # grad_cam(model_name="xception_v3",img_path="./data/xception/attack_tench.png", 
             # result_dir="results/xception", exp_name="tench_xcept" )
 

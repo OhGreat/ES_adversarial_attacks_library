@@ -9,7 +9,7 @@ from EA_components_OhGreat.Selection import *
 from EA_components_OhGreat.Recombination import *
 
 def adversarial_attack(model: GenericModel, batch_size: int,
-                        atk_image: str, true_label, epsilon=0.02 ):
+                        atk_image: str, true_label, epsilon):
 
 
     # model parameters
@@ -18,65 +18,62 @@ def adversarial_attack(model: GenericModel, batch_size: int,
 
     # open original image
     orig_img = Image.open(atk_image).resize(model.input_shape[:2])
-    # preprocess image for model
+    # save the original image resized to match model image size
+    orig_img.save('temp_orig.png')
+    # process image for model
     img = deepcopy(orig_img)
     img = model.transforms(img).unsqueeze(dim=0)
     print("Preprocessed input image shape:",img.shape)
-
+    # predict label and confidence for initial image
     initial_preds = model.simple_eval(img)
-    print(f"Predicted label {initial_preds.argmax(dim=1).item()} with confidence: {initial_preds.max()}\n")
-
-    # define individual size
-    ind_size = np.prod(img.shape)
-
+    print(f"Predicted label {initial_preds.argmax(dim=1).item()} with confidence: {initial_preds.max().item()}\n")
 
     # EA parameters
     recomb = GlobalDiscrete()
     mut = IndividualSigma()
     sel = CommaSelection()
+    # define individual size by multiplying all the dimensions
+    ind_size = np.prod(img.shape)
+
     # TODO: implement targeted attacks with maximization
+    # define evaluation 
     eval_ = LogCrossentropy(min=True, init_img=orig_img, 
                             epsilon=epsilon, true_label=true_label,
                             model=Xception(), batch_size=batch_size, device="cuda")
 
-    # create ES and run 
-    es = EA(minimize=True,budget=5000, patience=5, parents_size=8, 
+    # create and run ES 
+    es = EA(minimize=True,budget=3000, patience=5, parents_size=8, 
             offspring_size=56, individual_size=ind_size, recombination=recomb,
             mutation=mut, selection=sel, evaluation=eval_,verbose=3)
     best_noise, _ = es.run()
 
-
     # reshape to match input image
-    best_noise = best_noise.reshape((img.shape)).clip(0,1)
-    print(best_noise.shape)
-    noise_img = np.uint8(best_noise.reshape(model.input_shape)*255)
-    Image.fromarray(noise_img).save("noise.png")
+    best_noise = best_noise.reshape((img.shape))#.clip(-epsilon,epsilon)
+    # save the best found noise
+    np.save(file='temp_noise',arr=best_noise)
 
-    # scale by epsilon
-    orig_epsilon = epsilon*np.moveaxis(np.array(orig_img), 2, 0)/255.
-    best_noise = best_noise*orig_epsilon
-
+    # prerocess original image
     orig_img_norm = torch.unsqueeze((torch.tensor(
                                             np.array(orig_img))/255.
                                             ).permute((2,0,1)), 
                                             dim=0)
-    noisy_img_arr = (torch.add(torch.tensor(best_noise),orig_img_norm)*255).type(torch.uint8)
-
-    orig_img.save('orig.png')
+    # create attack image
+    noisy_img_arr = (torch.add(orig_img_norm, torch.tensor(best_noise)).clip(0,1)*255).type(torch.uint8)
 
     # save image as png
     noisy_img = Image.fromarray(np.moveaxis(noisy_img_arr[0,:].numpy(),0,2))
-    noisy_img.save("temp.png")
+    noisy_img.save("temp_atk_img.png")
 
+    # evaluate our final image
     img_model = model.transforms(noisy_img).unsqueeze(dim=0)
     pred = model.simple_eval(img_model)
-    print(f"Final evaluation pred class: {pred.argmax(axis=1).item()}, confidence: {pred.max().item()}, confidence original: {pred[:, true_label].item()}")
+    print(f"Final evaluation pred class: {pred.argmax(axis=1).item()}, confidence: {np.round(pred.max().item()*100,2)}%, confidence original: {np.round(pred[:, true_label].item()*100,2)}%")
 
 
 if __name__ == "__main__":
     model = Xception()
     batches = (128,16)
-    img = "./data/test/orig_tench.JPEG"
+    img = "temp_orig.png"
 
     adversarial_attack(model=model, batch_size=batches, 
                         atk_image=img, true_label=0, epsilon=0.05)

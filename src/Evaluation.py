@@ -7,7 +7,6 @@ from EA_components_OhGreat.Population import Population
 
 
 class LogCrossentropy:
-
     def __init__(self, min, init_img, true_label, epsilon, model, batch_size, device):
         self.model = model
         self.model.eval()
@@ -31,19 +30,22 @@ class LogCrossentropy:
 
     def __call__(self, X: Population):
         ret_vals = []
-        X.individuals = X.individuals.clip(0,1)
-        inds = torch.tensor(X.individuals.reshape((X.pop_size, *self.img_shape))*self.epsilon)
-        solutions = (torch.add(inds,self.orig_img_norm)*255).type(torch.uint8)
+        # clip individuals to epsilon interval
+        X.individuals = X.individuals.clip(-self.epsilon,self.epsilon)
+        # reshape to match population and image shape
+        inds = torch.tensor(X.individuals.reshape((X.pop_size, *self.img_shape)))
+        # create noise + original image attacks
+        solutions = (torch.add(self.orig_img_norm, inds).clip(0,1)*255).type(torch.uint8)
+        # pass through the model's preprocessing
         solutions = self.model.transforms(solutions)
-
+        # evaluate solutions through model
         with torch.no_grad():
             for sol in solutions:
                 pred = self.model.simple_eval(sol.unsqueeze(dim=0))
                 sign = 1 if self.min else -1
                 curr_eval = (sign * torch.log(pred[:, self.true_label])).item()
                 ret_vals.append(curr_eval)
-
+        # update individuals' fitness
         X.fitnesses = np.array(ret_vals)
-        print(np.exp(X.fitnesses).min())
         
 
