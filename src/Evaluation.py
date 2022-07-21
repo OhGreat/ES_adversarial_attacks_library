@@ -38,14 +38,18 @@ class LogCrossentropy:
         solutions = (torch.add(self.orig_img_norm, inds).clip(0,1)*255).type(torch.uint8)
         # pass through the model's preprocessing
         solutions = self.model.transforms(solutions)
+
+        curr_best_eval = self.worst_eval()
         # evaluate solutions through model
         with torch.no_grad():
             for sol in solutions:
                 pred = self.model.simple_eval(sol.unsqueeze(dim=0))
-                sign = 1 if self.min else -1
-                curr_eval = (sign * torch.log(pred[:, self.true_label])).item()
+                curr_eval = torch.log(pred[:, self.true_label]).item()
+                if (self.min and pred[:, self.true_label] < curr_best_eval) or (not self.min and pred[:, self.true_label] > curr_best_eval):
+                    curr_best_eval = pred[:, self.true_label]
                 ret_vals.append(curr_eval)
         # update individuals' fitness
         X.fitnesses = np.array(ret_vals)
+        print("Current best confidence:",curr_best_eval.item())
         
 

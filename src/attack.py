@@ -9,7 +9,7 @@ from EA_components_OhGreat.Selection import *
 from EA_components_OhGreat.Recombination import *
 
 def adversarial_attack(model: GenericModel, batch_size: int,
-                        atk_image: str, true_label, epsilon):
+                        atk_image: str, epsilon, true_label, target_label= None):
 
 
     # model parameters
@@ -26,7 +26,9 @@ def adversarial_attack(model: GenericModel, batch_size: int,
     print("Preprocessed input image shape:",img.shape)
     # predict label and confidence for initial image
     initial_preds = model.simple_eval(img)
-    print(f"Predicted label {initial_preds.argmax(dim=1).item()} with confidence: {initial_preds.max().item()}\n")
+    print(f"Predicted label {initial_preds.argmax(dim=1).item()} with confidence: {np.round(initial_preds.max().item()*100, 2)}")
+    if target_label is not None:
+        print(f"Confidence on targeted class {target_label}: {np.round(initial_preds[:, target_label].item()*100,3)}%\n")
 
     # EA parameters
     recomb = GlobalDiscrete()
@@ -35,14 +37,18 @@ def adversarial_attack(model: GenericModel, batch_size: int,
     # define individual size by multiplying all the dimensions
     ind_size = np.prod(img.shape)
 
-    # TODO: implement targeted attacks with maximization
+    # if we have a pecific target we make the problem a maximization 
+    # for the target class
+    label = true_label if target_label is None else target_label
+    minimize = True if target_label is None else False
+
     # define evaluation 
-    eval_ = LogCrossentropy(min=True, init_img=orig_img, 
-                            epsilon=epsilon, true_label=true_label,
+    eval_ = LogCrossentropy(min=minimize, init_img=orig_img, 
+                            epsilon=epsilon, true_label=label,
                             model=Xception(), batch_size=batch_size, device="cuda")
 
     # create and run ES 
-    es = EA(minimize=True,budget=3000, patience=5, parents_size=8, 
+    es = EA(minimize=minimize, budget=10000, patience=5, parents_size=8, 
             offspring_size=56, individual_size=ind_size, recombination=recomb,
             mutation=mut, selection=sel, evaluation=eval_,verbose=3)
     best_noise, _ = es.run()
@@ -68,6 +74,8 @@ def adversarial_attack(model: GenericModel, batch_size: int,
     img_model = model.transforms(noisy_img).unsqueeze(dim=0)
     pred = model.simple_eval(img_model)
     print(f"Final evaluation pred class: {pred.argmax(axis=1).item()}, confidence: {np.round(pred.max().item()*100,2)}%, confidence original: {np.round(pred[:, true_label].item()*100,2)}%")
+    if target_label is not None:
+        print(f"Confidence on targeted class {target_label}: {np.round(pred[:, target_label].item()*100,2)}%")
 
 
 if __name__ == "__main__":
@@ -75,5 +83,6 @@ if __name__ == "__main__":
     batches = (128,16)
     img = "temp_orig.png"
 
-    adversarial_attack(model=model, batch_size=batches, 
-                        atk_image=img, true_label=0, epsilon=0.05)
+    adversarial_attack(model=model, batch_size=batches, atk_image=img,      
+                        true_label=0, target_label=2,#target_label=76,
+                        epsilon=0.05)
