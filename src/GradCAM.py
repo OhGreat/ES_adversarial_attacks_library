@@ -36,9 +36,9 @@ def grad_cam(model_name, img_path, true_label=None, result_dir="results", exp_na
     # print(f"Processed img shape: {img.shape}")
     # predict image
     pred = model.simple_eval(img)
-    print(f"Predicted image label: {pred.argmax().item()} with confidence: {torch.max(pred).item()*100} %")
+    print(f"Predicted image label: {pred.argmax().item()} with confidence: {np.round(torch.max(pred).item()*100,2)} %")
     if true_label is not None:
-        print(f"Original label: {true_label} confidence: {pred[:, true_label].item()*100} %")
+        print(f"Original label: {true_label} confidence: {np.round(pred[:, true_label].item()*100,2)} %")
 
     # pass image through custom forward pass 
     # to collect gradients of interest
@@ -96,16 +96,23 @@ if __name__ == "__main__":
     #         result_dir="results/xception", exp_name="tench_xcept" )
     # grad_cam(model_name="xception_v3",img_path="./data/test/shark.JPEG", 
     #         result_dir="results/xception", exp_name="shark_xcept" )
-    grad_cam(model_name="xception_v3",img_path="temp_orig.png",
-            true_label=0,
-            result_dir="results/xception/tench", exp_name="orig" )
-    grad_cam(model_name="xception_v3",img_path="temp_atk_img.png",
-            true_label=0,
-            result_dir="results/xception/tench", exp_name="noise" )
+    # grad_cam(model_name="xception_v3",img_path="temp_orig.png",
+            # true_label=0,
+            # result_dir="results/xception/tench", exp_name="orig" )
+    # grad_cam(model_name="xception_v3",img_path="temp_atk_img.png",
+    #         true_label=0,
+    #         result_dir="results/xception/tench", exp_name="noise" )
     # grad_cam(model_name="xception_v3",img_path="./data/xception/attack_tench.png", 
             # result_dir="results/xception", exp_name="tench_xcept" )
+    grad_cam(model_name="xception_v3",
+            img_path="results/xception/tench_0.1/orig_resized.png",
+            true_label=0,
+            result_dir="results/xception/tench_0.1/GradCam", exp_name="orig" )
 
-
+    grad_cam(model_name="xception_v3",
+            img_path="results/xception/tench_0.1/attack_img.png",
+            true_label=0,
+            result_dir="results/xception/tench_0.1/GradCam", exp_name="noise" )
     # ResNet models
     # grad_cam(model_name="resnet50",img_path="./data/test/orig_tench.JPEG", 
             # result_dir="results", exp_name="tench" )

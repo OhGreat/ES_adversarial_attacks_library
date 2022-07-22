@@ -7,13 +7,14 @@ from EA_components_OhGreat.Population import Population
 
 
 class LogCrossentropy:
-    def __init__(self, min, init_img, true_label, epsilon, model, batch_size, device):
+    def __init__(self, min, atk_mode, init_img, true_label, epsilon, model, batch_size, device):
         self.model = model
         self.model.eval()
         self.epsilon = epsilon
         self.img_shape = (3,299,299)
         self.true_label = true_label
         self.min = min
+        self.atk_mode = atk_mode
         self.device = device
         self.orig_img = init_img
         # this is the processed image to be added to the generated noise
