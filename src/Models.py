@@ -40,7 +40,7 @@ class Xception(GenericModel):
         self.weights = Inception_V3_Weights.IMAGENET1K_V1
         self.model = inception_v3(weights=self.weights)
         # expected input shape
-        self.input_shape = (299,299,3)
+        self.input_shape = (3,299,299)
         # model image preprocessing transformation
         self.transforms = self.weights.transforms()
         # gradients placeholder

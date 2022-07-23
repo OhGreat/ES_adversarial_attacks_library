@@ -85,35 +85,12 @@ def create_images(heatmap, img_path):
 
 
 if __name__ == "__main__":
-    # VGG models
-    # grad_cam(model_name="vgg19",img_path="./data/test/orig_tench.JPEG", 
-            # result_dir="results", exp_name="tench" )
-    # grad_cam(model_name="vgg19",img_path="./data/test/noisy_input_0.png", 
-    #         result_dir="results", exp_name="tench_noise" )
 
-    # Xception models
-    # grad_cam(model_name="xception_v3",img_path="./data/test/orig_tench.JPEG", 
-    #         result_dir="results/xception", exp_name="tench_xcept" )
-    # grad_cam(model_name="xception_v3",img_path="./data/test/shark.JPEG", 
-    #         result_dir="results/xception", exp_name="shark_xcept" )
-    # grad_cam(model_name="xception_v3",img_path="temp_orig.png",
-            # true_label=0,
-            # result_dir="results/xception/tench", exp_name="orig" )
-    # grad_cam(model_name="xception_v3",img_path="temp_atk_img.png",
-    #         true_label=0,
-    #         result_dir="results/xception/tench", exp_name="noise" )
-    # grad_cam(model_name="xception_v3",img_path="./data/xception/attack_tench.png", 
-            # result_dir="results/xception", exp_name="tench_xcept" )
-    grad_cam(model_name="xception_v3",
-            img_path="results/xception/tench_0.1/orig_resized.png",
-            true_label=0,
-            result_dir="results/xception/tench_0.1/GradCam", exp_name="orig" )
-
-    grad_cam(model_name="xception_v3",
-            img_path="results/xception/tench_0.1/attack_img.png",
-            true_label=0,
-            result_dir="results/xception/tench_0.1/GradCam", exp_name="noise" )
-    # ResNet models
-    # grad_cam(model_name="resnet50",img_path="./data/test/orig_tench.JPEG", 
-            # result_dir="results", exp_name="tench" )
-    pass
+    experiment_dir = "results/10k_iters"
+    a = ["red_channel", "all_channels", "shadow_noise"]
+    
+    for i in range(len(a)):
+        grad_cam(model_name="xception_v3",
+                img_path=f"{experiment_dir}/{a[i]}/attack_img.png",
+                true_label=0,
+                result_dir=f"{experiment_dir}/{a[i]}/GradCAM", exp_name=f"{a[i]}_atk" )
