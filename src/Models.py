@@ -35,16 +35,17 @@ class GenericModel(nn.Module):
 class Xception(GenericModel):
     def __init__(self):
         super(Xception, self).__init__()
+
         # define model
         from torchvision.models import inception_v3, Inception_V3_Weights
         self.weights = Inception_V3_Weights.IMAGENET1K_V1
         self.model = inception_v3(weights=self.weights)
+
         # expected input shape
         self.input_shape = (3,299,299)
+
         # model image preprocessing transformation
         self.transforms = self.weights.transforms()
-        # gradients placeholder
-        self.gradients = None
 
     def get_activations(self, x):
         """ Method for the activation exctraction
@@ -83,16 +84,17 @@ class Xception(GenericModel):
 class ResNet(GenericModel):
     def __init__(self):
         super(ResNet, self).__init__()
+
         # define resnet and weights
         from torchvision.models import resnet50, ResNet50_Weights
         self.weights = ResNet50_Weights.IMAGENET1K_V2
         self.model = resnet50(weights=self.weights)
 
+        # expected input shape
+        self.input_shape = (3,256,256)
+
         # model preprocessing of input images
         self.transforms = self.weights.transforms()
-
-        # placeholder for the gradients
-        self.gradients = None
 
     def forward(self, x):
         # model before classification head
@@ -130,6 +132,9 @@ class VGG(GenericModel):
         # get the pretrained VGG19 network
         self.weights = VGG19_Weights.IMAGENET1K_V1
         self.model = vgg19(weights=self.weights)
+
+        # expected input shape
+        self.input_shape = (3,256,256)
         
         # all layers before classification head
         self.features_conv = self.model.features[:36]
@@ -140,9 +145,6 @@ class VGG(GenericModel):
         # get the classifier of the vgg19
         # it is simply the last sequential block
         self.classifier = self.model.classifier
-        
-        # placeholder for the gradients
-        self.gradients = None
     
         # model preprocessing for images
         self.transforms = self.weights.transforms()

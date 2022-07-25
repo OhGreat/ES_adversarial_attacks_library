@@ -10,6 +10,7 @@ from EA_components_OhGreat.EA import *
 from EA_components_OhGreat.Mutation import *
 from EA_components_OhGreat.Selection import *
 from EA_components_OhGreat.Recombination import *
+from GradCAM import grad_cam
 
 def adversarial_attack(model: GenericModel, batch_size: int,
                         atk_image: str, atk_mode: int,
@@ -24,8 +25,7 @@ def adversarial_attack(model: GenericModel, batch_size: int,
         if result_folder[-1] == '/':
             result_folder = result_folder[:-1]
 
-    # model parameters
-    model = Xception()
+    # set model to evaluation mode
     model.eval()
 
     # open original image
@@ -53,7 +53,7 @@ def adversarial_attack(model: GenericModel, batch_size: int,
         ind_size = np.prod(model.input_shape)
     else:
         exit("Select a valid attack method.")
-    print("Ind shape:", ind_size)
+    print("Problem dimension (individual size):", ind_size)
 
     # if we have a specific target class we make the problem a maximization 
     # for the target class
@@ -63,7 +63,7 @@ def adversarial_attack(model: GenericModel, batch_size: int,
     # define evaluation 
     eval_ = LogCrossentropy(min=minimize, atk_mode=atk_mode, init_img=orig_img, 
                             epsilon=epsilon, label=label,
-                            model=Xception(), batch_size=batch_size, device="cuda")
+                            model=model, batch_size=batch_size, device="cuda")
 
     # create ES 
     es = EA(minimize=minimize, budget=budget, patience=patience, parents_size=ps, 
@@ -95,7 +95,8 @@ def adversarial_attack(model: GenericModel, batch_size: int,
         # reshape best found solution to match input image
         best_noise = best_noise.reshape(model.input_shape)
         # create attack image
-        noisy_img_arr = (torch.add(orig_img_norm, torch.tensor(best_noise)).clip(0,1)*255).type(torch.uint8)[0]
+        noisy_img_arr = (torch.add(orig_img_norm, torch.tensor(best_noise)
+                        ).clip(0,1)*255).type(torch.uint8)[0]
 
     elif atk_mode == 3:  # noise as shadow on all channels
         # reshape best found solution to match input image
@@ -108,6 +109,7 @@ def adversarial_attack(model: GenericModel, batch_size: int,
     # save the best found noise as .npy file
     np.save(file=f'{result_folder}/noise',arr=best_noise)
     # save complete attack image as png
+    # moveaxis puts the channels in last dimension
     noisy_img = Image.fromarray(np.moveaxis(noisy_img_arr.numpy(),0,2))
     noisy_img.save(f"{result_folder}/attack_img.png")
 
@@ -117,20 +119,3 @@ def adversarial_attack(model: GenericModel, batch_size: int,
     print(f"Final evaluation pred class: {pred.argmax(axis=1).item()}, confidence: {np.round(pred.max().item()*100,2)}%, confidence original: {np.round(pred[:, true_label].item()*100,2)}%")
     if target_label is not None:
         print(f"Confidence on targeted class {target_label}: {np.round(pred[:, target_label].item()*100,2)}%")
-
-
-if __name__ == "__main__":
-
-    model = Xception()
-    img = "data/test/orig_tench.JPEG"
-    experiment_dir = "results/very_temp"
-    a = ["red_channel", "all_channels", "shadow_noise"]
-
-    for i in range(len(a)):
-        adversarial_attack(model=model, batch_size=16,
-                            atk_image=img, atk_mode=i+1,
-                            true_label=0, target_label=None,
-                            epsilon=0.01, ps=8, os=56,
-                            budget=100, patience=3,
-                            verbose=2, result_folder=f'{experiment_dir}/{a[i]}')
-        print("")
