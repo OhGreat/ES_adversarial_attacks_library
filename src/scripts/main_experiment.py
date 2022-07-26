@@ -39,7 +39,7 @@ if __name__ == "__main__":
                                 atk_image=img, atk_mode=atk_idx+1,
                                 true_label=true_label, target_label=None,
                                 epsilon=0.01, ps=8, os=56,
-                                budget=5000, patience=3,
+                                budget=30, patience=3,
                                 verbose=2, result_folder=experiment_dir)
 
             # gradcam of noisy image
@@ -60,14 +60,19 @@ if __name__ == "__main__":
             f.write(res_w)
             f.close()
 
-        # add an empty line to separate models
-        f = open(f_name, "a")
-        f.write("\n")
-        f.close()
-
         # create original gradCAM
         orig_path = f"{experiment_base_name}/{mod_name[mod_idx]}/GradCAM_orig"
         grad_cam(model_name=mod_name[mod_idx],
                 img_path=experiment_dir+"/orig_resized.png",
                 true_label=true_label,
                 result_dir=orig_path, exp_name=f"orig_gradCAM")
+
+        # append results of original image
+        orig_img = Image.open(experiment_dir+"/orig_resized.png")
+        orig_img = model.transforms(img_t).unsqueeze(dim=0)
+        with torch.no_grad():
+                pred = model.simple_eval(img_t)
+        f = open(f_name, "a")
+        f.write(f"Label {true_label} initial confidence: {np.round(pred[0][true_label].item()*100,2)}")
+        f.write("\n")
+        f.close()
