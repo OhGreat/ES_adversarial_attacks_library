@@ -49,8 +49,10 @@ def adversarial_attack(model: GenericModel, batch_size: int,
     # define individual size depending on attack
     if atk_mode == 1 or atk_mode == 3:
         ind_size = np.prod(model.input_shape[1:])
-    elif atk_mode == 2:
+    elif atk_mode == 2:  # all channels attack
         ind_size = np.prod(model.input_shape)
+    elif atk_mode == 4:  # one pixel attack
+        ind_size = 4  # pixel value, x, y, channel
     else:
         exit("Select a valid attack method.")
     print("Problem dimension (individual size):", ind_size)
@@ -105,6 +107,10 @@ def adversarial_attack(model: GenericModel, batch_size: int,
         noisy_img_arr = orig_img_norm[0]
         noisy_img_arr = torch.add(noisy_img_arr, best_noise)
         noisy_img_arr = (noisy_img_arr.clip(0,1)*255).type(torch.uint8)
+    
+    # TODO: fonish one pixel k
+    elif atk_mode == 4:  # one pixel attack
+        pass
 
     # save the best found noise as .npy file
     np.save(file=f'{result_folder}/noise',arr=best_noise)

@@ -1,3 +1,4 @@
+from pyexpat import model
 import torch
 import numpy as np
 from PIL import Image
@@ -28,10 +29,9 @@ class LogCrossentropy:
 
     def __call__(self, X: Population):
 
-        # clip individuals to epsilon interval
-        X.individuals = X.individuals.clip(-self.epsilon,self.epsilon)
-
         if self.atk_mode == 1:  # noise on red channel
+            # clip individuals to epsilon interval
+            X.individuals = X.individuals.clip(-self.epsilon,self.epsilon)
             # reshape to match population and image shape
             inds = torch.tensor(X.individuals.reshape((X.pop_size, *self.model.input_shape[1:])))
             # add noise to first channel
@@ -42,12 +42,16 @@ class LogCrossentropy:
             solutions = torch.tensor(np.array(solutions))
 
         elif self.atk_mode == 2:  # noise on all channels
+            # clip individuals to epsilon interval
+            X.individuals = X.individuals.clip(-self.epsilon,self.epsilon)
             # reshape to match population and image shape
             inds = torch.tensor(X.individuals.reshape((X.pop_size, *self.img_shape)))
             # create noise + original image attacks
             solutions = (torch.add(self.orig_img_norm, inds).clip(0,1)*255).type(torch.uint8)
 
         elif self.atk_mode == 3:  # apply noise as shadow
+            # clip individuals to epsilon interval
+            X.individuals = X.individuals.clip(-self.epsilon,self.epsilon)
             # reshape to match population and image shape
             inds = torch.tensor(X.individuals.reshape((X.pop_size, *self.model.input_shape[1:])))
             # add noise to all channels
@@ -55,6 +59,29 @@ class LogCrossentropy:
             # clip image, multiply by 255 and take integer values
             solutions = (torch.tensor(np.array(solutions)).clip(0,1)*255).type(torch.uint8)
 
+        elif self.atk_mode == 4:  # one pixel attack
+            inds = torch.tensor(X.individuals.reshape(X.pop_size, -1))
+            print("ind 0:",inds.shape, inds[0])
+            # fix clip pixel
+            inds[:,0] = (inds[:,0].clip(0,1) * 255).type(torch.uint8)
+            # fix coordinates
+            inds[:,1] = (inds[:,1].clip(0,1) * self.model.input_shape[-1]).type(torch.int)
+            inds[:,2] = (inds[:,2].clip(0,1) * self.model.input_shape[-1]).type(torch.int)
+            # fix channel
+            # inds[:,-1] = torch.where(inds[:,-1] < 0.33, 0, inds[:,-1])
+            # inds[:,-1] = torch.where((inds[:,-1] >= 0.33) & (inds[:,-1] < 0.66), 1, inds[:,-1])
+            # inds[:,-1] = torch.where(inds[:,-1] >= 0.66, 2, inds[:,-1])
+            inds[:,-1] = 0.5
+            print(inds[:,-1])
+            inds[:,-1][inds[:,-1] < 0.33] = 0
+            inds[:,-1][(inds[:,-1] >= 0.33) & (inds[:,-1] < 0.66)] = 1
+            inds[:,-1][inds[:,-1] >= 0.66] = 2
+            # inds[:,-1][(inds[:,-1] != 0) & (inds[:,-1] != 2)] = 1
+            print("ind 0:",inds.shape, inds[0])
+            exit()
+            inds[:,:,:,0] = (inds[:,:,:,0].clip(0,1)*255).type(torch.uint8)
+            print(f"{inds.shape}, val max: {inds[:,0].max()}, coords: {inds[:,:,0].max(), inds[:,:,:,0].max()}")
+            exit()
         else:
             exit('Please choose a correct attack modality.')
 

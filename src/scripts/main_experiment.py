@@ -12,8 +12,9 @@ from src.Models import VGG, ResNet, Xception
 
 if __name__ == "__main__":
 
+    # TODO: Tune for every experiment
     # choose experiment directory
-    experiment_base_name = "results/bird_e0.01_5k"
+    experiment_base_name = "results/temp"
     if not exists(experiment_base_name):
         makedirs(experiment_base_name)
     # results file
@@ -21,6 +22,7 @@ if __name__ == "__main__":
     f = open(f_name, "w")
     f.close()
 
+    # TODO: Tune for each experiment
     # choose attack image
     img = "data/test/bird_11.JPEG"
     true_label = 11
@@ -28,24 +30,27 @@ if __name__ == "__main__":
     # choose models to attack
     models = [VGG, ResNet, Xception]
     mod_name = ["vgg19", "resnet50", "xception_v3"]
-    attacks = ["red_channel", "all_channels", "shadow_noise"]
-
+    # attacks = ["red_channel", "all_channels", "shadow_noise"]
+    attacks = ["one_pixel"]
+    
     for mod_idx in range(len(models)):
+        # prepare model
         model = models[mod_idx]()
+        model.eval()
         for atk_idx in range(len(attacks)):
+            # define experiment directory
             experiment_dir = f"{experiment_base_name}/{mod_name[mod_idx]}/{attacks[atk_idx]}"
             print("Curr experiment dir:", experiment_dir)
+            # run attack
             adversarial_attack(model=model, batch_size=16,
-                                atk_image=img, atk_mode=atk_idx+1,
+                                atk_image=img, atk_mode=4, #atk_mode=atk_idx+1,
                                 true_label=true_label, target_label=None,
-                                epsilon=0.01, ps=8, os=56,
-                                budget=30, patience=3,
+                                epsilon=0.05, ps=8, os=56,
+                                budget=100, patience=4,
                                 verbose=2, result_folder=experiment_dir)
-
-            # gradcam of noisy image
+            # gradcam of constructed noisy image
             grad_cam(model_name=mod_name[mod_idx],
                 img_path=experiment_dir+"/attack_img.png",
-                # img_path=f"data/test/tench_0.JPEG",
                 true_label=true_label,
                 result_dir=experiment_dir+"/GradCAM", exp_name=f"grad" )
             print("")
@@ -69,10 +74,9 @@ if __name__ == "__main__":
 
         # append results of original image
         orig_img = Image.open(experiment_dir+"/orig_resized.png")
-        orig_img = model.transforms(img_t).unsqueeze(dim=0)
+        orig_img = model.transforms(orig_img).unsqueeze(dim=0)
         with torch.no_grad():
-                pred = model.simple_eval(img_t)
+                pred = model.simple_eval(orig_img)
         f = open(f_name, "a")
-        f.write(f"Label {true_label} initial confidence: {np.round(pred[0][true_label].item()*100,2)}")
-        f.write("\n")
+        f.write(f"Label {true_label} initial confidence: {np.round(pred[0][true_label].item()*100,2)}\n\n")
         f.close()
