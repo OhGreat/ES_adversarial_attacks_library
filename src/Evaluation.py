@@ -74,6 +74,7 @@ class LogCrossentropy:
             inds[:,-1] = 0.5
             print(inds[:,-1])
             inds[:,-1][inds[:,-1] < 0.33] = 0
+            # TODO: fix this expression, currently not working
             inds[:,-1][(inds[:,-1] >= 0.33) & (inds[:,-1] < 0.66)] = 1
             inds[:,-1][inds[:,-1] >= 0.66] = 2
             # inds[:,-1][(inds[:,-1] != 0) & (inds[:,-1] != 2)] = 1

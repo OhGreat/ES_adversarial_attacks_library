@@ -4,6 +4,19 @@ A Grad-CAM implementation following the original publication in <a href="#origin
 
 The purpose of this work is twofold, aiming to quantify the robustness of different (classification) DNN architectures while also qualitatively understanding how the attacks affect the focus of the model on the input image.
 
+## Installation
+
+To use the repository a Python 3 environment is required. It is recommended to use Anaconda as a virtual environment as the installation for pytorch becomes pretty straightforward. After creating an anaconda environment you can use the following commands to install the required packages:
+
+To install pytorch:
+```bash
+conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch
+
+```
+To install the remaining packages you can use the `requirements.txt` file in the main directory as below:
+```bash
+pip install -r requirements.txt
+```
 
 
 ## References
