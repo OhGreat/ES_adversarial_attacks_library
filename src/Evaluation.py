@@ -1,7 +1,5 @@
-from pyexpat import model
 import torch
 import numpy as np
-from PIL import Image
 from EA_components_OhGreat.Population import Population
 
 
@@ -38,7 +36,8 @@ class LogCrossentropy:
             solutions = torch.add(self.orig_img_norm[:,0,:], inds).unsqueeze(dim=1)
             # concatenate the other two channels to our solutions,
             # clip values and transform values in integers from 0 to 255 
-            solutions = [((torch.cat((solutions[i], self.orig_img_norm[0,1:,:]), dim=0)).clip(0,1)*255).type(torch.uint8).numpy() for i in range(len(solutions))]
+            solutions = [((torch.cat((solutions[i], self.orig_img_norm[0,1:,:]), dim=0)).clip(0,1)*255).type(torch.uint8).numpy()
+                            for i in range(len(solutions))]
             solutions = torch.tensor(np.array(solutions))
 
         elif self.atk_mode == 2:  # noise on all channels
@@ -60,29 +59,30 @@ class LogCrossentropy:
             solutions = (torch.tensor(np.array(solutions)).clip(0,1)*255).type(torch.uint8)
 
         elif self.atk_mode == 4:  # one pixel attack
-            inds = torch.tensor(X.individuals.reshape(X.pop_size, -1))
-            print("ind 0:",inds.shape, inds[0])
-            # fix clip pixel
-            inds[:,0] = (inds[:,0].clip(0,1) * 255).type(torch.uint8)
+            """ Individual representation is a vector of 4 values:
+                    val 0: pixel noise
+                    val 1, 2: coordinates on image
+                    val 3: channel
+            """
+            # inds = torch.tensor(X.individuals.reshape(X.pop_size, -1))
+            inds = torch.tensor(X.individuals)
+            # clip pixel noise
+            # REMINDER: we cannot cast to torch.uint8 because we are dealing with coordinates in the next positions
+            inds[:,0] = (inds[:,0].clip(0,1))
             # fix coordinates
-            inds[:,1] = (inds[:,1].clip(0,1) * self.model.input_shape[-1]).type(torch.int)
-            inds[:,2] = (inds[:,2].clip(0,1) * self.model.input_shape[-1]).type(torch.int)
+            inds[:,1] = (inds[:,1].clip(0,1) * self.model.input_shape[-2]-1)
+            inds[:,2] = (inds[:,2].clip(0,1) * self.model.input_shape[-1]-1)
             # fix channel
-            # inds[:,-1] = torch.where(inds[:,-1] < 0.33, 0, inds[:,-1])
-            # inds[:,-1] = torch.where((inds[:,-1] >= 0.33) & (inds[:,-1] < 0.66), 1, inds[:,-1])
-            # inds[:,-1] = torch.where(inds[:,-1] >= 0.66, 2, inds[:,-1])
-            inds[:,-1] = 0.5
-            print(inds[:,-1])
             inds[:,-1][inds[:,-1] < 0.33] = 0
-            # TODO: fix this expression, currently not working
-            inds[:,-1][(inds[:,-1] >= 0.33) & (inds[:,-1] < 0.66)] = 1
             inds[:,-1][inds[:,-1] >= 0.66] = 2
-            # inds[:,-1][(inds[:,-1] != 0) & (inds[:,-1] != 2)] = 1
-            print("ind 0:",inds.shape, inds[0])
-            exit()
-            inds[:,:,:,0] = (inds[:,:,:,0].clip(0,1)*255).type(torch.uint8)
-            print(f"{inds.shape}, val max: {inds[:,0].max()}, coords: {inds[:,:,0].max(), inds[:,:,:,0].max()}")
-            exit()
+            inds[:,-1][(inds[:,-1] >= 0.33) & (inds[:,-1] < 0.66)] = 1
+            # create solution images
+            solutions = np.repeat(self.orig_img_norm, repeats=X.pop_size, axis=0)
+            for curr_ind in range(X.pop_size):
+                x = inds[curr_ind][1].type(torch.int)
+                y = inds[curr_ind][2].type(torch.int)
+                channel = inds[curr_ind][-1].type(torch.int)
+                solutions[curr_ind,channel,x,y] += inds[curr_ind][0] 
         else:
             exit('Please choose a correct attack modality.')
 

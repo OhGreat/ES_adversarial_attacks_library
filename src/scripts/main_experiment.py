@@ -1,10 +1,10 @@
-from os import makedirs
-from os.path import exists
 import sys
 sys.path.append('.')
 sys.path.append('src')
 import torch
 import numpy as np
+from os import makedirs
+from os.path import exists
 from PIL import Image
 from src.attack import adversarial_attack
 from src.GradCAM import grad_cam
@@ -46,7 +46,7 @@ if __name__ == "__main__":
                                 atk_image=img, atk_mode=4, #atk_mode=atk_idx+1,
                                 true_label=true_label, target_label=None,
                                 epsilon=0.05, ps=8, os=56,
-                                budget=100, patience=4,
+                                budget=1000, patience=4,
                                 verbose=2, result_folder=experiment_dir)
             # gradcam of constructed noisy image
             grad_cam(model_name=mod_name[mod_idx],

@@ -108,7 +108,7 @@ def adversarial_attack(model: GenericModel, batch_size: int,
         noisy_img_arr = torch.add(noisy_img_arr, best_noise)
         noisy_img_arr = (noisy_img_arr.clip(0,1)*255).type(torch.uint8)
     
-    # TODO: fonish one pixel k
+    # TODO: finish one pixel attack
     elif atk_mode == 4:  # one pixel attack
         pass
 
