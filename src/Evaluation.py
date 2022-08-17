@@ -36,9 +36,8 @@ class LogCrossentropy:
             solutions = torch.add(self.orig_img_norm[:,0,:], inds).unsqueeze(dim=1)
             # concatenate the other two channels to our solutions,
             # clip values and transform values in integers from 0 to 255 
-            solutions = [((torch.cat((solutions[i], self.orig_img_norm[0,1:,:]), dim=0)).clip(0,1)*255).type(torch.uint8).numpy()
-                            for i in range(len(solutions))]
-            solutions = torch.tensor(np.array(solutions))
+            solutions = torch.stack([((torch.cat((solutions[i], self.orig_img_norm[0,1:,:]), dim=0)).clip(0,1)*255).type(torch.uint8)
+                            for i in range(len(solutions))])
 
         elif self.atk_mode == 2:  # noise on all channels
             # clip individuals to epsilon interval
@@ -54,15 +53,15 @@ class LogCrossentropy:
             # reshape to match population and image shape
             inds = torch.tensor(X.individuals.reshape((X.pop_size, *self.model.input_shape[1:])))
             # add noise to all channels
-            solutions = [torch.add(inds[i],self.orig_img_norm[0,:]).numpy() for i in range(len(inds))]
+            solutions = torch.stack([torch.add(inds[i],self.orig_img_norm[0,:]) for i in range(len(inds))])
             # clip image, multiply by 255 and take integer values
-            solutions = (torch.tensor(np.array(solutions)).clip(0,1)*255).type(torch.uint8)
+            solutions = (solutions.clip(0,1)*255).type(torch.uint8)
 
-        elif self.atk_mode == 4:  # one pixel attack
+        elif self.atk_mode == 4:  # one-dimensional one pixel attack
             """ Individual representation is a vector of 4 values:
-                    val 0: pixel noise
-                    val 1, 2: coordinates on image
-                    val 3: channel
+                    val in pos 0: pixel noise
+                    val in pos 1, 2: coordinates on image
+                    val in pos 3: channel
             """
             # inds = torch.tensor(X.individuals.reshape(X.pop_size, -1))
             inds = torch.tensor(X.individuals)
@@ -100,7 +99,8 @@ class LogCrossentropy:
                 curr_eval = torch.log(pred[:, self.label]).item()
                 fitnesses.append(curr_eval)
                 # check best found confidence of generation for print
-                if (self.min and pred[:, self.label] < curr_best_eval) or (not self.min and pred[:, self.label] > curr_best_eval):
+                if (self.min and pred[:, self.label] < curr_best_eval) or (
+                    not self.min and pred[:, self.label] > curr_best_eval):
                     curr_best_eval = pred[:, self.label]
         # update individual fitnesses
         X.fitnesses = np.array(fitnesses)
