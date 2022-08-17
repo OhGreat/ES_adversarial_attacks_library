@@ -28,8 +28,8 @@ if __name__ == "__main__":
     true_label = 11
     
     # choose models to attack
-    models = [VGG, ResNet, Xception]
-    mod_name = ["vgg19", "resnet50", "xception_v3"]
+    models = [VGG]#, ResNet, Xception]
+    mod_name = ["vgg19"]#, "resnet50", "xception_v3"]
     # attacks = ["red_channel", "all_channels", "shadow_noise"]
     attacks = ["one_pixel"]
     
@@ -46,7 +46,7 @@ if __name__ == "__main__":
                                 atk_image=img, atk_mode=4, #atk_mode=atk_idx+1,
                                 true_label=true_label, target_label=None,
                                 epsilon=0.05, ps=8, os=56,
-                                budget=1000, patience=4,
+                                budget=3000, patience=4,
                                 verbose=2, result_folder=experiment_dir)
             # gradcam of constructed noisy image
             grad_cam(model_name=mod_name[mod_idx],

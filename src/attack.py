@@ -110,7 +110,23 @@ def adversarial_attack(model: GenericModel, batch_size: int,
     
     # TODO: finish one pixel attack
     elif atk_mode == 4:  # one pixel attack
-        pass
+        # fix coordinates
+        best_noise[1] = (best_noise[1].clip(0,1) * model.input_shape[-2]-1)
+        best_noise[2] = (best_noise[2].clip(0,1) * model.input_shape[-1]-1)
+        # fix channel
+        if best_noise[-1] < 0.33:
+            best_noise[-1] = 0
+        elif best_noise[-1] >= 0.66:
+            best_noise[-1] = 2
+        else:
+            best_noise[-1] = 1
+        # add pixel noise to image
+        noisy_img_arr = orig_img_norm[0]
+        x = best_noise[1].astype(np.int32)
+        y = best_noise[2].astype(np.int32)
+        channel = best_noise[-1].astype(np.int32)
+        noisy_img_arr[channel,x,y] += best_noise[0]
+        noisy_img_arr = (noisy_img_arr.clip(0,1)*255).type(torch.uint8)
 
     # save the best found noise as .npy file
     np.save(file=f'{result_folder}/noise',arr=best_noise)
