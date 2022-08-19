@@ -7,7 +7,8 @@ from os.path import exists
 from copy import deepcopy
 from Models import ResNet, VGG, Xception
 
-def grad_cam(model_name, img_path, true_label=None, result_dir="results", exp_name="temp"):
+def grad_cam(model_name, img_path, true_label=None, 
+            result_dir="results", exp_name="temp"):
 
     # choose working model
     if model_name == "resnet50":
