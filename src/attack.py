@@ -25,9 +25,6 @@ def adversarial_attack(model: GenericModel, batch_size: int,
         if result_folder[-1] == '/':
             result_folder = result_folder[:-1]
 
-    # set model to evaluation mode
-    model.eval()
-
     # open original image
     orig_img = Image.open(atk_image).resize(model.input_shape[1:])
     # save the original image resized to match model image size

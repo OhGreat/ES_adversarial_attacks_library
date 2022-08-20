@@ -21,7 +21,6 @@ if not exists(out_dir):
 results = []
 
 model = VGG()
-model.eval()
 with torch.no_grad():
     miss_count = 0
     for tench in tenches:

@@ -8,10 +8,15 @@ class GenericModel(nn.Module):
         self.input_shape = None
     
     def simple_eval(self, x):
+        self.eval()
         x = self.model(x)
         return x.softmax(dim=1)
 
     def forward(self):
+        x = self.model(x)
+        return x.softmax(dim=1)
+
+    def grad_cam(self):
         pass
 
     def get_activations(self, x):
@@ -71,7 +76,7 @@ class Xception(GenericModel):
         x = self.model.Mixed_7c(x)
         return x
 
-    def forward(self, x):
+    def grad_cam(self, x):
         x = self.get_activations(x)
         h = x.register_hook(self.activations_hook)
         x = self.model.avgpool(x)
@@ -96,7 +101,7 @@ class ResNet(GenericModel):
         # model preprocessing of input images
         self.transforms = self.weights.transforms()
 
-    def forward(self, x):
+    def grad_cam(self, x):
         # model before classification head
         x = self.get_activations(x)
         
@@ -149,7 +154,7 @@ class VGG(GenericModel):
         # model preprocessing for images
         self.transforms = self.weights.transforms()
         
-    def forward(self, x):
+    def grad_cam(self, x):
         x = self.features_conv(x)
         
         # register the hook

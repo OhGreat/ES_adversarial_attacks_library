@@ -20,8 +20,6 @@ def grad_cam(model_name, img_path, true_label=None,
     else:
         exit("Please choose a valid model.")
     print(f"\nModel: {model_name}")
-    # set model to evaluation mode
-    model.eval()
 
     # open image
     img = Image.open(img_path).resize(model.input_shape[1:])
@@ -38,7 +36,7 @@ def grad_cam(model_name, img_path, true_label=None,
 
     # pass image through custom forward pass 
     # to collect gradients of interest
-    pred = model(img)
+    pred = model.grad_cam(img)
     # backward pass
     pred[:, 0].backward()
     # get the gradients

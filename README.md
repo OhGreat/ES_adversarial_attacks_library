@@ -2,7 +2,7 @@
 This repository contains a framework to prototype black-box adversarial attacks on DNNs, by using Evolutionary Strategies.
 A Grad-CAM implementation following the original publication in <a href="#original_publication">[1]</a> has also been created to visualize the impact of the adversarial attacks with respect to the input.
 
-The purpose of this work is twofold, aiming to quantify the robustness of different (classification) DNN architectures while also qualitatively understanding how the attacks affect the focus of the model on the input image.
+The purpose of this work is twofold, aiming to quantify the robustness of different (classification) DNN architectures on Black-Box attacks, while also qualitatively understanding how the attacks affect the focus of the model on the input images.
 
 ## Installation
 
@@ -11,7 +11,6 @@ To use the repository a Python 3 environment is required. It is recommended to u
 To install pytorch:
 ```bash
 conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch
-
 ```
 To install the remaining packages you can use the `requirements.txt` file in the main directory as below:
 ```bash

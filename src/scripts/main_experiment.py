@@ -30,13 +30,12 @@ if __name__ == "__main__":
     # choose models to attack
     models = [VGG]#, ResNet, Xception]
     mod_name = ["vgg19"]#, "resnet50", "xception_v3"]
-    attacks = ["red_channel", "all_channels", "shadow_noise"]
-    # attacks = ["shadow_noise"] #["one_pixel"] # remember to change the atk_mode in the adversarial_attack fun below
+    # attacks = ["red_channel", "all_channels", "shadow_noise"]
+    attacks = ["shadow_noise"] #["one_pixel"] # remember to change the atk_mode in the adversarial_attack fun below
     
     for mod_idx in range(len(models)):
         # prepare model
         model = models[mod_idx]()
-        model.eval()
         for atk_idx in range(len(attacks)):
             # define experiment directory
             experiment_dir = f"{experiment_base_name}/{mod_name[mod_idx]}/{attacks[atk_idx]}"
@@ -46,7 +45,7 @@ if __name__ == "__main__":
                                 atk_image=img, atk_mode=atk_idx+1, # atk_mode=3,
                                  true_label=true_label, target_label=None,
                                 epsilon=0.05, ps=12, os=84,
-                                budget=500, patience=4,
+                                budget=200, patience=4,
                                 verbose=2, result_folder=experiment_dir)
             # gradcam of constructed noisy image
             grad_cam(model_name=mod_name[mod_idx],
