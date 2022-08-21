@@ -10,7 +10,6 @@ from EA_components_OhGreat.EA import *
 from EA_components_OhGreat.Mutation import *
 from EA_components_OhGreat.Selection import *
 from EA_components_OhGreat.Recombination import *
-from GradCAM import grad_cam
 
 def adversarial_attack(model: GenericModel, batch_size: int,
                         atk_image: str, atk_mode: int,
@@ -18,6 +17,25 @@ def adversarial_attack(model: GenericModel, batch_size: int,
                         epsilon=0.05, ps=8, os=56,
                         budget=1000, patience=3,
                         verbose=2, result_folder="temp"):
+    """ Parameters:
+            - model: Model to attack, should be one of the models implemented in the Models.py file
+            - batch_size: size of the batch to pass to the model (not yet implemented)
+            - atk_image: base image to use for the adversarial attack
+            - atk_mode: (int) between 1 and 4 representing the attack method
+                    - 1: attack only the first channel
+                    - 2: attack all channels
+                    - 3: attack all channels with the same noise (shadow approach)
+                    - 4: one pixel attack methed
+            - true_label: real label the image belongs to
+            - target_label: targeted label to be used when doing a targeted attack
+            - epsilon: maximum value of the pixel perturbations
+            - ps: parent size for the evolutionary algorithm
+            - os : offspring size for the evolutionary algorithm
+            - budget: maximum budget for the attack
+            - patience: generations to wait before resetting sigma if no new best is found
+            - verbose: debug variable to print information on the terminal
+            - result_folder: directory used to save results
+    """
 
     # create results directories
     if not exists(result_folder):
