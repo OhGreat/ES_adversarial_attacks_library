@@ -17,6 +17,7 @@ def adversarial_attack(model: GenericModel, batch_size: int,
                         epsilon=0.05, ps=8, os=56,
                         budget=1000, patience=3,
                         verbose=2, result_folder="temp"):
+    # TODO: add GPU support
     """ Parameters:
             - model: Model to attack, should be one of the models implemented in the Models.py file
             - batch_size: size of the batch to pass to the model (not yet implemented)

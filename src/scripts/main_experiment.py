@@ -31,7 +31,7 @@ if __name__ == "__main__":
     models = [VGG]#, ResNet, Xception]
     mod_name = ["vgg19"]#, "resnet50", "xception_v3"]
     # attacks = ["red_channel", "all_channels", "shadow_noise"]
-    attacks = ["shadow_noise"] #["one_pixel"] # remember to change the atk_mode in the adversarial_attack fun below
+    attacks = ["one_pixel"] # ["shadow_noise"] # remember to change the atk_mode in the adversarial_attack fun below
     
     for mod_idx in range(len(models)):
         # prepare model
