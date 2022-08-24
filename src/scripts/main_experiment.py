@@ -42,10 +42,10 @@ if __name__ == "__main__":
             print("Curr experiment dir:", experiment_dir)
             # run attack
             adversarial_attack(model=model, batch_size=16,
-                                atk_image=img, atk_mode=atk_idx+1, # atk_mode=3,
+                                atk_image=img, atk_mode=5, # atk_mode=atk_idx+1
                                  true_label=true_label, target_label=None,
-                                epsilon=0.05, ps=12, os=84,
-                                budget=200, patience=4,
+                                epsilon=0.05, ps=4, os=30,
+                                budget=1000, patience=4,
                                 verbose=2, result_folder=experiment_dir)
             # gradcam of constructed noisy image
             grad_cam(model_name=mod_name[mod_idx],

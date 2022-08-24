@@ -69,6 +69,8 @@ def adversarial_attack(model: GenericModel, batch_size: int,
         ind_size = np.prod(model.input_shape)
     elif atk_mode == 4:  # one pixel attack
         ind_size = 4  # pixel value, x, y, channel
+    elif atk_mode == 5:
+        ind_size = 5
     else:
         exit("Select a valid attack method.")
     print("Problem dimension (individual size):", ind_size)
@@ -124,11 +126,11 @@ def adversarial_attack(model: GenericModel, batch_size: int,
         noisy_img_arr = torch.add(noisy_img_arr, best_noise)
         noisy_img_arr = (noisy_img_arr.clip(0,1)*255).type(torch.uint8)
     
-    # TODO: finish one pixel attack
-    elif atk_mode == 4:  # one pixel attack
+    elif atk_mode == 4:  # 1D one pixel attack
         # fix coordinates
         best_noise[1] = (best_noise[1].clip(0,1) * model.input_shape[-2]-1)
         best_noise[2] = (best_noise[2].clip(0,1) * model.input_shape[-1]-1)
+        print("Coords one pix atk:", best_noise[1], best_noise[2])
         # fix channel
         if best_noise[-1] < 0.33:
             best_noise[-1] = 0
@@ -142,6 +144,17 @@ def adversarial_attack(model: GenericModel, batch_size: int,
         y = best_noise[2].astype(np.int32)
         channel = best_noise[-1].astype(np.int32)
         noisy_img_arr[channel,x,y] += best_noise[0]
+        noisy_img_arr = (noisy_img_arr.clip(0,1)*255).type(torch.uint8)
+    
+    elif atk_mode == 5: # 3D one pixel attack
+        best_noise = torch.tensor(best_noise)
+        # fix coordinates
+        x = (best_noise[3].clip(0,1) * model.input_shape[-2]-1).type(torch.int)
+        y = (best_noise[4].clip(0,1) * model.input_shape[-1]-1).type(torch.int)
+
+        # add noise to each channel of pixel
+        noisy_img_arr = orig_img_norm[0]
+        noisy_img_arr[0:3,x,y] += best_noise[0:3]
         noisy_img_arr = (noisy_img_arr.clip(0,1)*255).type(torch.uint8)
 
     # save the best found noise as .npy file

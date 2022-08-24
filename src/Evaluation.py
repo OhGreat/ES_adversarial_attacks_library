@@ -84,25 +84,23 @@ class LogCrossentropy:
         
         elif self.atk_mode == 5: # 3D one-pixel attack
             """ Individual representation is a vector of 5 values:
-                    val in pos 0: pixel noise R
-                    val in pos 1: pixel noise G
-                    val in pos 2: pixel noise B
+                    val in pos 0,1,2: pixel noise for each channel
                     val in pos 3, 4: coordinates on image
             """
-            # clip noises
-            inds[:,0:2] = (inds[:,0:2].clip(0,1))
-            # inds[:,1] = (inds[:,1].clip(0,1))
-            # inds[:,2] = (inds[:,2].clip(0,1))
+            inds = torch.tensor(X.individuals)
             # fix coordinates
-            inds[:,3] = (inds[:,1].clip(0,1) * self.model.input_shape[-2]-1)
-            inds[:,4] = (inds[:,2].clip(0,1) * self.model.input_shape[-1]-1)
-            solutions = np.repeat(self.orig_img_norm, repeats=X.pop_size, axis=0)
+            inds[:,3] = (inds[:,3].clip(0,1) * self.model.input_shape[-2]-1)
+            inds[:,4] = (inds[:,4].clip(0,1) * self.model.input_shape[-1]-1)
+            # create starting solutions
+            solutions = torch.repeat_interleave(self.orig_img_norm, repeats=X.pop_size,dim=0)
+
             for curr_ind in range(X.pop_size):
+                #coords
                 x = inds[curr_ind][3].type(torch.int)
                 y = inds[curr_ind][4].type(torch.int)
-                solutions[curr_ind,0,x,y] += inds[curr_ind][0]
-                solutions[curr_ind,1,x,y] += inds[curr_ind][1]
-                solutions[curr_ind,2,x,y] += inds[curr_ind][2]
+                # add attack to solutions
+                solutions[curr_ind,0:3,x,y] += inds[curr_ind][0:3]
+            solutions = (solutions.clip(0,1)*255).type(torch.uint8)
         else:
             exit('Please choose a correct attack modality.')
 
