@@ -11,8 +11,9 @@ from src.GradCAM import grad_cam
 from src.Models import VGG, ResNet, Xception
 
 if __name__ == "__main__":
-
+    ##########################################################################
     # TODO: Tune for every experiment
+    ##########################################################################
     # choose experiment directory
     experiment_base_name = "results/temp"
     if not exists(experiment_base_name):
@@ -27,12 +28,17 @@ if __name__ == "__main__":
     img = "data/test/shark_2.JPEG"
     true_label = 2
     
+    # TODO: make as dictionaries models and attacks
     # choose models to attack
     models = [VGG]#, ResNet, Xception]
     mod_name = ["vgg19"]#, "resnet50", "xception_v3"]
     # attacks = ["red_channel", "all_channels", "shadow_noise"]
     attacks = ["one_pixel"] # ["shadow_noise"] # remember to change the atk_mode in the adversarial_attack fun below
     
+    # atk_modes should be proportionate to attacks above
+    atk_modes = [5] # np.arange(1,6)
+    #########################################################################
+
     for mod_idx in range(len(models)):
         # prepare model
         model = models[mod_idx]()
@@ -42,10 +48,10 @@ if __name__ == "__main__":
             print("Curr experiment dir:", experiment_dir)
             # run attack
             adversarial_attack(model=model, batch_size=16,
-                                atk_image=img, atk_mode=5, # atk_mode=atk_idx+1
+                                atk_image=img, atk_mode=atk_modes[atk_idx],
                                  true_label=true_label, target_label=None,
                                 epsilon=0.05, ps=4, os=30,
-                                budget=1000, patience=4,
+                                budget=200, patience=4,
                                 verbose=2, result_folder=experiment_dir)
             # gradcam of constructed noisy image
             grad_cam(model_name=mod_name[mod_idx],
