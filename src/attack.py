@@ -16,7 +16,7 @@ def adversarial_attack(model: GenericModel,
                         true_label: int, target_label=None,
                         epsilon=0.05, ps=8, os=56,
                         budget=1000, patience=3,
-                         batch_size=128, device="cpu",
+                         batch_size=128, device=None,
                         verbose=2, result_folder="temp"):
     """ Parameters:
             - model: Model to attack, should be one of the models implemented in the Models.py file
@@ -43,6 +43,10 @@ def adversarial_attack(model: GenericModel,
         makedirs(result_folder)
         if result_folder[-1] == '/':
             result_folder = result_folder[:-1]
+
+    # choose best device if not predefined
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # open original image
     orig_img = Image.open(atk_image).resize(model.input_shape[1:])
