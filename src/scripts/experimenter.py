@@ -37,21 +37,26 @@ if __name__ == "__main__":
     
     # atk_modes should be proportionate to attacks above
     atk_modes = [5] # np.arange(1,6)
+
+    # define device
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Computing on {device} device.")
     #########################################################################
 
     for mod_idx in range(len(models)):
         # prepare model
-        model = models[mod_idx]()
+        model = models[mod_idx]().to(device)
         for atk_idx in range(len(attacks)):
             # define experiment directory
             experiment_dir = f"{experiment_base_name}/{mod_name[mod_idx]}/{attacks[atk_idx]}"
             print("Curr experiment dir:", experiment_dir)
             # run attack
-            adversarial_attack(model=model, batch_size=16,
+            adversarial_attack(model=model,
                                 atk_image=img, atk_mode=atk_modes[atk_idx],
                                  true_label=true_label, target_label=None,
                                 epsilon=0.05, ps=8, os=56,
                                 budget=200, patience=4,
+                                batch_size=16, device=device,
                                 verbose=2, result_folder=experiment_dir)
             # gradcam of constructed noisy image
             grad_cam(model_name=mod_name[mod_idx],
@@ -64,7 +69,7 @@ if __name__ == "__main__":
             img_t = Image.open(experiment_dir+"/attack_img.png")
             img_t = model.transforms(img_t).unsqueeze(dim=0)
             with torch.no_grad():
-                pred = model.simple_eval(img_t)
+                pred = model.simple_eval(img_t.to(device))
             res_w = f"{mod_name[mod_idx]}\t | atk: {atk_idx }\t | confidence orig (label: {true_label}): {np.round(pred[0][true_label].item()*100,2)}\t | pred label: {pred.argmax().item()}, confidence: {np.round(pred[0].max().item()*100,2)}\n"
             f = open(f_name, "a")
             f.write(res_w)
@@ -81,7 +86,7 @@ if __name__ == "__main__":
         orig_img = Image.open(experiment_dir+"/orig_resized.png")
         orig_img = model.transforms(orig_img).unsqueeze(dim=0)
         with torch.no_grad():
-                pred = model.simple_eval(orig_img)
+                pred = model.simple_eval(orig_img.to(device))
         f = open(f_name, "a")
         f.write(f"Label {true_label} initial confidence: {np.round(pred[0][true_label].item()*100,2)}\n\n")
         f.close()

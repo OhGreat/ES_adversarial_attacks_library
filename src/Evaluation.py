@@ -6,7 +6,7 @@ from EA_components_OhGreat.Population import Population
 class LogCrossentropy:
     def __init__(self, min, atk_mode, init_img, label, epsilon, model, batch_size, device):
         self.device = device
-        self.model = model.to(device)
+        self.model = model
         self.epsilon = epsilon
         self.img_shape = self.model.input_shape
         self.label = label

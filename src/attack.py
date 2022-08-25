@@ -16,7 +16,7 @@ def adversarial_attack(model: GenericModel,
                         true_label: int, target_label=None,
                         epsilon=0.05, ps=8, os=56,
                         budget=1000, patience=3,
-                         batch_size=128, device=None,
+                         batch_size=128, device="cpu",
                         verbose=2, result_folder="temp"):
     """ Parameters:
             - model: Model to attack, should be one of the models implemented in the Models.py file
@@ -49,11 +49,12 @@ def adversarial_attack(model: GenericModel,
     # save the original image resized to match model image size
     orig_img.save(f'{result_folder}/orig_resized.png')
     # process image for model
+    model = model
     img = deepcopy(orig_img)
     img = model.transforms(img).unsqueeze(dim=0)
     print("Preprocessed input image shape:",img.shape)
     # predict label and confidence for initial image
-    initial_preds = model.simple_eval(img)
+    initial_preds = model.simple_eval(img.to(device))
     print(f"Predicted label {initial_preds.argmax(dim=1).item()} with confidence: {np.round(initial_preds.max().item()*100, 2)}")
     if target_label is not None:
         print(f"Confidence on targeted class {target_label}: {np.round(initial_preds[:, target_label].item()*100,3)}%\n")
@@ -80,10 +81,6 @@ def adversarial_attack(model: GenericModel,
     label = true_label if target_label is None else target_label
     minimize = True if target_label is None else False
 
-    # define device
-    if device is None:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"Computing on {device} device.")
     # define evaluation
     eval_ = LogCrossentropy(min=minimize, atk_mode=atk_mode, init_img=orig_img, 
                             epsilon=epsilon, label=label,
@@ -169,7 +166,7 @@ def adversarial_attack(model: GenericModel,
 
     # evaluate our final image
     img_model = model.transforms(noisy_img).unsqueeze(dim=0)
-    pred = model.simple_eval(img_model)
+    pred = model.simple_eval(img_model.to(device))
     print(f"Final evaluation pred class: {pred.argmax(axis=1).item()}, confidence: {np.round(pred.max().item()*100,2)}%, confidence original: {np.round(pred[:, true_label].item()*100,2)}%")
     if target_label is not None:
         print(f"Confidence on targeted class {target_label}: {np.round(pred[:, target_label].item()*100,2)}%")
