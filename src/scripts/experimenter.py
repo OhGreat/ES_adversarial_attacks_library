@@ -36,7 +36,7 @@ if __name__ == "__main__":
     attacks = ["one_pixel"] # ["shadow_noise"] # remember to change the atk_mode in the adversarial_attack fun below
     
     # atk_modes should be proportionate to attacks above
-    atk_modes = [5] # np.arange(1,6)
+    atk_modes = [4] # np.arange(1,6)
     #########################################################################
 
     for mod_idx in range(len(models)):

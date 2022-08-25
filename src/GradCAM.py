@@ -76,21 +76,3 @@ def create_images(heatmap, img, heatmap_mul=0.3):
     heated_image = (heatmap * heatmap_mul) + (img * (1 - heatmap_mul))
 
     return heatmap, heated_image
-
-
-if __name__ == "__main__":
-
-    # experiment_dir = "results/10k_iters"
-    # a = ["red_channel", "all_channels", "shadow_noise"]
-    
-    # for i in range(len(a)):
-    #     grad_cam(model_name="xception_v3",
-    #             img_path=f"{experiment_dir}/{a[i]}/attack_img.png",
-    #             true_label=0,
-    #             result_dir=f"{experiment_dir}/{a[i]}/GradCAM", exp_name=f"{a[i]}_atk" )
-
-    grad_cam(model_name="vgg19",
-                img_path=f"TEMP/attack_img.png",
-                # img_path=f"data/test/tench_0.JPEG",
-                true_label=0,
-                result_dir=f"TEMP/GradCAM", exp_name=f"aa" )

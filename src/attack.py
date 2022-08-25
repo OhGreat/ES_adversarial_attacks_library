@@ -130,7 +130,6 @@ def adversarial_attack(model: GenericModel, batch_size: int,
         # fix coordinates
         best_noise[1] = (best_noise[1].clip(0,1) * model.input_shape[-2]-1)
         best_noise[2] = (best_noise[2].clip(0,1) * model.input_shape[-1]-1)
-        print("Coords one pix atk:", best_noise[1], best_noise[2])
         # fix channel
         if best_noise[-1] < 0.33:
             best_noise[-1] = 0
