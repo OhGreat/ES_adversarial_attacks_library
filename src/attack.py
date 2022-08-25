@@ -34,11 +34,12 @@ def adversarial_attack(model: GenericModel,
             - budget: maximum budget for the attack
             - patience: generations to wait before resetting sigma if no new best is found
             - batch_size: size of the batch to pass to the model (not yet implemented)
+            - device: defines the device to use for the computation. Can be either "cpu" or "cuda". 
             - verbose: debug variable to print information on the terminal
             - result_folder: directory used to save results
     """
 
-    # create results directories
+    # create results directories if not existant
     if not exists(result_folder):
         makedirs(result_folder)
         if result_folder[-1] == '/':
@@ -67,14 +68,15 @@ def adversarial_attack(model: GenericModel,
     recomb = GlobalDiscrete()
     mut = IndividualSigma()
     sel = CommaSelection()
+
     # define individual size depending on attack
     if atk_mode == 1 or atk_mode == 3:
         ind_size = np.prod(model.input_shape[1:])
     elif atk_mode == 2:  # all channels attack
         ind_size = np.prod(model.input_shape)
-    elif atk_mode == 4:  # one pixel attack
+    elif atk_mode == 4:  # 1D one pixel attack
         ind_size = 4  # pixel value, x, y, channel
-    elif atk_mode == 5:
+    elif atk_mode == 5: # 3D one pixel attack
         ind_size = 5
     else:
         exit("Select a valid attack method.")
@@ -100,7 +102,6 @@ def adversarial_attack(model: GenericModel,
     atk_end = time.time()
     print(f'Attack time: {np.round((atk_end- atk_start)/60,2)} minutes')
 
-
     # prerocess original image
     # values between 0-1 and make channels first
     orig_img_norm = torch.unsqueeze((torch.tensor(
@@ -116,7 +117,7 @@ def adversarial_attack(model: GenericModel,
         noisy_img_arr = (noisy_img_arr.clip(0,1)*255).type(torch.uint8)
         print(noisy_img_arr.shape)
 
-    elif atk_mode == 2: # 3 channels attack
+    elif atk_mode == 2:  # 3 channels attack
         # reshape best found solution to match input image
         best_noise = best_noise.reshape(model.input_shape)
         # create attack image
@@ -151,7 +152,7 @@ def adversarial_attack(model: GenericModel,
         noisy_img_arr[channel,x,y] += best_noise[0]
         noisy_img_arr = (noisy_img_arr.clip(0,1)*255).type(torch.uint8)
     
-    elif atk_mode == 5: # 3D one pixel attack
+    elif atk_mode == 5:  # 3D one pixel attack
         best_noise = torch.tensor(best_noise)
         # fix coordinates
         x = (best_noise[3].clip(0,1) * model.input_shape[-2]-1).type(torch.int)
