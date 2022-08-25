@@ -26,7 +26,7 @@ class LogCrossentropy:
 
     def __call__(self, X: Population):
 
-        if self.atk_mode == 1:  # noise on red channel
+        if self.atk_mode == "R_channel_only":  # noise on red channel
             # clip individuals to epsilon interval
             X.individuals = X.individuals.clip(-self.epsilon,self.epsilon)
             # reshape to match population and image shape
@@ -39,7 +39,7 @@ class LogCrossentropy:
                                     ).clip(0,1)*255).type(torch.uint8)
                                         for i in range(len(solutions))])
 
-        elif self.atk_mode == 2:  # noise on all channels
+        elif self.atk_mode == "all_channels":  # noise on all channels
             # clip individuals to epsilon interval
             X.individuals = X.individuals.clip(-self.epsilon,self.epsilon)
             # reshape to match population and image shape
@@ -47,7 +47,7 @@ class LogCrossentropy:
             # create noise + original image attacks
             solutions = (torch.add(self.orig_img_norm, inds).clip(0,1)*255).type(torch.uint8)
 
-        elif self.atk_mode == 3:  # apply noise as shadow on all channels
+        elif self.atk_mode == "shadow_noise":  # apply noise as shadow on all channels
             # clip individuals to epsilon interval
             X.individuals = X.individuals.clip(-self.epsilon,self.epsilon)
             # reshape to match population and image shape
@@ -57,7 +57,7 @@ class LogCrossentropy:
             # clip image, multiply by 255 and take integer values
             solutions = (solutions.clip(0,1)*255).type(torch.uint8)
 
-        elif self.atk_mode == 4:  # 1D one pixel attack
+        elif self.atk_mode == "1D_one-pixel":  # 1D one pixel attack
             """ Individual representation is a vector of 4 values:
                     val in pos 0: pixel noise
                     val in pos 1, 2: coordinates on image
@@ -83,7 +83,7 @@ class LogCrossentropy:
             # fix pixel boundaries
             solutions = (solutions.clip(0,1)*255).type(torch.uint8)
         
-        elif self.atk_mode == 5: # 3D one pixel attack
+        elif self.atk_mode == "3D_one-pixel": # 3D one pixel attack
             """ Individual representation is a vector of 5 values:
                     val in pos 0,1,2: pixel noise for each channel
                     val in pos 3, 4: coordinates on image
