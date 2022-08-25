@@ -132,6 +132,7 @@ def adversarial_attack(model: GenericModel,
         noisy_img_arr = (noisy_img_arr.clip(0,1)*255).type(torch.uint8)
     
     elif atk_mode == 4:  # 1D one pixel attack
+        best_noise = torch.tensor(best_noise)
         # fix coordinates
         best_noise[1] = (best_noise[1].clip(0,1) * model.input_shape[-2]-1)
         best_noise[2] = (best_noise[2].clip(0,1) * model.input_shape[-1]-1)
@@ -144,9 +145,9 @@ def adversarial_attack(model: GenericModel,
             best_noise[-1] = 1
         # add pixel noise to image
         noisy_img_arr = orig_img_norm[0]
-        x = best_noise[1].astype(np.int32)
-        y = best_noise[2].astype(np.int32)
-        channel = best_noise[-1].astype(np.int32)
+        x = best_noise[1].type(torch.int)
+        y = best_noise[2].type(torch.int)
+        channel = best_noise[-1].type(torch.int)
         noisy_img_arr[channel,x,y] += best_noise[0]
         noisy_img_arr = (noisy_img_arr.clip(0,1)*255).type(torch.uint8)
     
