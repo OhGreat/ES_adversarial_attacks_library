@@ -5,13 +5,13 @@ from EA_components_OhGreat.Population import Population
 
 class LogCrossentropy:
     def __init__(self, min, atk_mode, init_img, label, epsilon, model, batch_size, device):
-        self.model = model
+        self.device = device
+        self.model = model.to(device)
         self.epsilon = epsilon
         self.img_shape = self.model.input_shape
         self.label = label
         self.min = min
         self.atk_mode = atk_mode
-        self.device = device
         self.orig_img = init_img
         # this is the processed image to be added to the generated noise
         self.orig_img_norm = torch.unsqueeze((torch.tensor(
@@ -115,7 +115,7 @@ class LogCrossentropy:
         # evaluate solutions through model
         with torch.no_grad():
             for sol in solutions:
-                pred = self.model.simple_eval(sol.unsqueeze(dim=0))
+                pred = self.model.simple_eval(sol.unsqueeze(dim=0).to(self.device))
                 # fitness is the logarithm of the predicted confidence
                 curr_eval = torch.log(pred[:, self.label]).item()
                 fitnesses.append(curr_eval)

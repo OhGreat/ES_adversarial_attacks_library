@@ -11,16 +11,15 @@ from EA_components_OhGreat.Mutation import *
 from EA_components_OhGreat.Selection import *
 from EA_components_OhGreat.Recombination import *
 
-def adversarial_attack(model: GenericModel, batch_size: int,
+def adversarial_attack(model: GenericModel,
                         atk_image: str, atk_mode: int,
                         true_label: int, target_label=None,
                         epsilon=0.05, ps=8, os=56,
                         budget=1000, patience=3,
+                         batch_size=128, device=None,
                         verbose=2, result_folder="temp"):
-    # TODO: add GPU support
     """ Parameters:
             - model: Model to attack, should be one of the models implemented in the Models.py file
-            - batch_size: size of the batch to pass to the model (not yet implemented)
             - atk_image: base image to use for the adversarial attack
             - atk_mode: (int) between 1 and 4 representing the attack method
                     - 1: attack only the first channel
@@ -34,6 +33,7 @@ def adversarial_attack(model: GenericModel, batch_size: int,
             - os : offspring size for the evolutionary algorithm
             - budget: maximum budget for the attack
             - patience: generations to wait before resetting sigma if no new best is found
+            - batch_size: size of the batch to pass to the model (not yet implemented)
             - verbose: debug variable to print information on the terminal
             - result_folder: directory used to save results
     """
@@ -80,10 +80,14 @@ def adversarial_attack(model: GenericModel, batch_size: int,
     label = true_label if target_label is None else target_label
     minimize = True if target_label is None else False
 
-    # define evaluation 
+    # define device
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Computing on {device} device.")
+    # define evaluation
     eval_ = LogCrossentropy(min=minimize, atk_mode=atk_mode, init_img=orig_img, 
                             epsilon=epsilon, label=label,
-                            model=model, batch_size=batch_size, device="cuda")
+                            model=model, batch_size=batch_size, device=device)
 
     # create ES 
     es = EA(minimize=minimize, budget=budget, patience=patience, parents_size=ps, 

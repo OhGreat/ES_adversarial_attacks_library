@@ -36,7 +36,7 @@ if __name__ == "__main__":
     attacks = ["one_pixel"] # ["shadow_noise"] # remember to change the atk_mode in the adversarial_attack fun below
     
     # atk_modes should be proportionate to attacks above
-    atk_modes = [4] # np.arange(1,6)
+    atk_modes = [5] # np.arange(1,6)
     #########################################################################
 
     for mod_idx in range(len(models)):
@@ -50,7 +50,7 @@ if __name__ == "__main__":
             adversarial_attack(model=model, batch_size=16,
                                 atk_image=img, atk_mode=atk_modes[atk_idx],
                                  true_label=true_label, target_label=None,
-                                epsilon=0.05, ps=4, os=30,
+                                epsilon=0.05, ps=8, os=56,
                                 budget=200, patience=4,
                                 verbose=2, result_folder=experiment_dir)
             # gradcam of constructed noisy image
