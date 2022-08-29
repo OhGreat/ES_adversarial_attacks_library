@@ -15,7 +15,7 @@ if __name__ == "__main__":
     # TODO: Tune for every experiment
     ##########################################################################
     # choose experiment directory
-    experiment_base_name = "results/tench_e0.05-4k_iters"
+    experiment_base_name = "results/bird_e0.01-10k_iters"
     if not exists(experiment_base_name):
         makedirs(experiment_base_name)
     # results file
@@ -25,8 +25,8 @@ if __name__ == "__main__":
 
     # TODO: Tune for each experiment
     # choose attack image
-    img = "data/test/tench_0.JPEG"
-    true_label = 0
+    img = "data/test/bird_11.JPEG"
+    true_label = 11
     
     # TODO: make as dictionaries models and their dir names
     # choose models to attack
@@ -50,9 +50,9 @@ if __name__ == "__main__":
             adversarial_attack(model=model,
                                 atk_image=img, atk_mode=attack,
                                  true_label=true_label, target_label=None,
-                                epsilon=0.05, ps=8, os=56,
-                                budget=4000, patience=5,
-                                batch_size=16, device=device,
+                                epsilon=0.01, ps=12, os=12*7,
+                                budget=10000, patience=5,
+                                batch_size=32, device=device,
                                 verbose=2, result_folder=experiment_dir)
             # gradcam of constructed noisy image
             grad_cam(model_name=mod_name[mod_idx],
