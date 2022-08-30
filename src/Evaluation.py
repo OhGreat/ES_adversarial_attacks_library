@@ -1,13 +1,16 @@
 import torch
 import numpy as np
+from scipy.ndimage import zoom
+from torchvision.transforms import Resize
 from EA_components_OhGreat.Population import Population
 
 
 class LogCrossentropy:
-    def __init__(self, min, atk_mode, init_img, label, epsilon, model, batch_size, device):
+    def __init__(self, min, atk_mode, init_img, label, epsilon, downsample, model, batch_size, device):
         self.device = device
         self.model = model
         self.epsilon = epsilon
+        self.downsample = downsample
         self.img_shape = self.model.input_shape
         self.label = label
         self.min = min
@@ -18,7 +21,9 @@ class LogCrossentropy:
                                             np.array(self.orig_img)
                                             )/255.), 
                                             dim=0).permute((0,3,1,2))
-
+        if self.downsample is not None:
+            self.down_img_shape = zoom(self.orig_img_norm,zoom=(1,1,downsample,downsample), order=1).shape
+    
     def worst_eval(self):
         """ Return worst evaluation possible for the current problem configutation.
         """
@@ -43,7 +48,11 @@ class LogCrossentropy:
             # clip individuals to epsilon interval
             X.individuals = X.individuals.clip(-self.epsilon,self.epsilon)
             # reshape to match population and image shape
-            inds = torch.tensor(X.individuals.reshape((X.pop_size, *self.img_shape)))
+            if self.downsample is not None:
+                inds = torch.tensor(X.individuals.reshape((X.pop_size, *self.down_img_shape[1:])))
+                inds = Resize(size=self.img_shape[1:]).forward(inds)
+            else:
+                inds = torch.tensor(X.individuals.reshape((X.pop_size, *self.img_shape)))
             # create noise + original image attacks
             solutions = (torch.add(self.orig_img_norm, inds).clip(0,1)*255).type(torch.uint8)
 

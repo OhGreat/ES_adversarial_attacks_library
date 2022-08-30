@@ -6,6 +6,7 @@ class GenericModel(nn.Module):
         self.model = None
         self.gradients = None
         self.input_shape = None
+        self.transf_shape = None
     
     def simple_eval(self, x):
         self.eval()
@@ -48,6 +49,9 @@ class Xception(GenericModel):
 
         # expected input shape
         self.input_shape = (3,299,299)
+
+        # transform shape
+        self.transf_shape = (3,342,342)
 
         # model image preprocessing transformation
         self.transforms = self.weights.transforms()
@@ -96,7 +100,10 @@ class ResNet(GenericModel):
         self.model = resnet50(weights=self.weights)
 
         # expected input shape
-        self.input_shape = (3,256,256)
+        self.input_shape = (3,224,224)
+
+        # transform shape
+        self.transf_shape = (3,232,232)
 
         # model preprocessing of input images
         self.transforms = self.weights.transforms()
@@ -139,7 +146,10 @@ class VGG(GenericModel):
         self.model = vgg19(weights=self.weights)
 
         # expected input shape
-        self.input_shape = (3,256,256)
+        self.input_shape = (3,224,224)
+
+        # transform shape
+        self.transf_shape = (3,256,256)
         
         # all layers before classification head
         self.features_conv = self.model.features[:36]

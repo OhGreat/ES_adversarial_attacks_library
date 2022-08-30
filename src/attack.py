@@ -1,9 +1,11 @@
 import torch
 import time
 from PIL import Image
+from scipy.ndimage import zoom
 from copy import deepcopy
 from os import makedirs
 from os.path import exists
+from torchvision.transforms import Resize
 from Models import *
 from Evaluation import LogCrossentropy
 from EA_components_OhGreat.EA import *
@@ -14,7 +16,8 @@ from EA_components_OhGreat.Recombination import *
 def adversarial_attack(model: GenericModel,
                         atk_image: str, atk_mode: int,
                         true_label: int, target_label=None,
-                        epsilon=0.05, ps=8, os=56,
+                        epsilon=0.05, downsample=None, 
+                        ps=8, os=56,
                         budget=1000, patience=3,
                          batch_size=128, device=None,
                         verbose=2, result_folder="temp"):
@@ -73,7 +76,12 @@ def adversarial_attack(model: GenericModel,
     if atk_mode == "R_channel_only" or atk_mode == "shadow_noise":
         ind_size = np.prod(model.input_shape[1:])
     elif atk_mode == "all_channels":  # all channels attack
-        ind_size = np.prod(model.input_shape)
+        if downsample is not None:
+            down_img = zoom(img, zoom=(1,1,downsample,downsample), order=1)
+            ind_size = np.prod(down_img.shape)
+            print("Downsampled image shape:", down_img.shape)
+        else:
+            ind_size = np.prod(model.input_shape)
     elif atk_mode == "1D_one-pixel":  # 1D one pixel attack
         ind_size = 4  # pixel value, x, y, channel
     elif atk_mode == "3D_one-pixel": # 3D one pixel attack
@@ -89,7 +97,7 @@ def adversarial_attack(model: GenericModel,
 
     # define evaluation
     eval_ = LogCrossentropy(min=minimize, atk_mode=atk_mode, init_img=orig_img, 
-                            epsilon=epsilon, label=label,
+                            epsilon=epsilon, downsample=downsample, label=label,
                             model=model, batch_size=batch_size, device=device)
 
     # create ES 
@@ -119,9 +127,14 @@ def adversarial_attack(model: GenericModel,
 
     elif atk_mode == "all_channels":  # 3 channels attack
         # reshape best found solution to match input image
-        best_noise = best_noise.reshape(model.input_shape)
+        best_noise = torch.tensor(best_noise)
+        if downsample is not None:
+            best_noise = best_noise.reshape(down_img.shape)
+            best_noise = Resize(size=model.input_shape[1:]).forward(best_noise)
+        else:
+            best_noise = best_noise.reshape(model.input_shape)
         # create attack image
-        noisy_img_arr = (torch.add(orig_img_norm, torch.tensor(best_noise)
+        noisy_img_arr = (torch.add(orig_img_norm, best_noise
                         ).clip(0,1)*255).type(torch.uint8)[0]
 
     elif atk_mode == "shadow_noise":  # noise as shadow on all channels
