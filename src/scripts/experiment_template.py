@@ -15,7 +15,7 @@ if __name__ == "__main__":
     # TODO: Tune for every experiment
     ##########################################################################
     # choose experiment directory
-    experiment_base_name = "results/bird_e0.01-10k_iters"
+    experiment_base_name = "results/template"
     if not exists(experiment_base_name):
         makedirs(experiment_base_name)
     # results file

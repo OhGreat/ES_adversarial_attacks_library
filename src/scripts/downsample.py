@@ -15,7 +15,7 @@ if __name__ == "__main__":
     # TODO: Tune for every experiment
     ##########################################################################
     # choose experiment directory
-    experiment_base_name = "results/downsample_test"
+    experiment_base_name = "results/downsample_e0.01_10k"
     if not exists(experiment_base_name):
         makedirs(experiment_base_name)
     # results file
@@ -50,9 +50,9 @@ if __name__ == "__main__":
             adversarial_attack(model=model,
                                 atk_image=img, atk_mode=attack,
                                  true_label=true_label, target_label=None,
-                                epsilon=0.05, downsample=0.5,
-                                 ps=4, os=24,
-                                budget=50, patience=5,
+                                epsilon=0.01, downsample=0.5,
+                                 ps=12, os=12*7,
+                                budget=10000, patience=5,
                                 batch_size=32, device=device,
                                 verbose=2, result_folder=experiment_dir)
             # gradcam of constructed noisy image
