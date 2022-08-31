@@ -19,8 +19,7 @@ class LogCrossentropy:
         # this is the processed image to be added to the generated noise
         self.orig_img_norm = torch.unsqueeze((torch.tensor(
                                             np.array(self.orig_img)
-                                            )/255.), 
-                                            dim=0).permute((0,3,1,2))
+                                            )/255.).permute((2,0,1)),dim=0)
         if self.downsample is not None:
             self.down_img_shape = zoom(self.orig_img_norm,zoom=(1,1,downsample,downsample), order=1).shape
     
@@ -46,13 +45,13 @@ class LogCrossentropy:
 
         elif self.atk_mode == "all_channels":  # noise on all channels
             # clip individuals to epsilon interval
-            X.individuals = X.individuals.clip(-self.epsilon,self.epsilon)
+            inds = torch.tensor(X.individuals).clip(-self.epsilon,self.epsilon)
             # reshape to match population and image shape
             if self.downsample is not None:
-                inds = torch.tensor(X.individuals.reshape((X.pop_size, *self.down_img_shape[1:])))
-                inds = Resize(size=self.img_shape[1:]).forward(inds)
+                inds = inds.reshape((X.pop_size, *self.down_img_shape[1:]))
+                inds = Resize(size=self.model.transf_shape[1:]).forward(inds)
             else:
-                inds = torch.tensor(X.individuals.reshape((X.pop_size, *self.img_shape)))
+                inds = inds.reshape((X.pop_size, *self.model.transf_shape))
             # create noise + original image attacks
             solutions = (torch.add(self.orig_img_norm, inds).clip(0,1)*255).type(torch.uint8)
 
@@ -61,10 +60,10 @@ class LogCrossentropy:
             inds = torch.tensor(X.individuals).clip(-self.epsilon,self.epsilon)
             # reshape to match population and image shape
             if self.downsample is not None:
-                inds = X.individuals.reshape((X.pop_size, *self.down_img_shape[2:])) 
-                inds = Resize(size=self.img_shape[1:]).forward(inds)
+                inds = inds.reshape((X.pop_size, *self.down_img_shape[2:])) 
+                inds = Resize(size=self.model.transf_shape[1:]).forward(inds)
             else:
-                inds = inds.reshape((X.pop_size, 1, *self.img_shape[1:]))
+                inds = inds.reshape((X.pop_size, 1, *self.model.transf_shape[1:]))
             # add same noise to all channels
             solutions = torch.stack([torch.add(inds[i],self.orig_img_norm[0,:]) for i in range(len(inds))])
             # clip image, multiply by 255 and take integer values

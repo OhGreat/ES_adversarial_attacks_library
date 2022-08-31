@@ -53,7 +53,7 @@ def adversarial_attack(model: GenericModel,
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # open original image
-    orig_img = Image.open(atk_image).resize(model.input_shape[1:])
+    orig_img = Image.open(atk_image).resize(model.transf_shape[1:])
     # save the original image resized to match model image size
     orig_img.save(f'{result_folder}/orig_resized.png')
     # process image for model
@@ -75,18 +75,22 @@ def adversarial_attack(model: GenericModel,
     # define individual size depending on attack
     if atk_mode == "R_channel_only" or atk_mode == "shadow_noise":
         if downsample is not None:
-            down_img = zoom(img, zoom=(1,1,downsample,downsample), order=1)
-            ind_size = np.prod(down_img.shape[2:])
+            down_img = zoom(np.array(orig_img), 
+                            zoom=(downsample,downsample,1), 
+                            order=1)
+            ind_size = np.prod(down_img.shape[:2])
             print("Downsampled image shape:", down_img.shape)
         else:
-            ind_size = np.prod(model.input_shape[1:])
+            ind_size = np.prod(model.transf_shape[1:])
     elif atk_mode == "all_channels":  # all channels attack
         if downsample is not None:
-            down_img = zoom(img, zoom=(1,1,downsample,downsample), order=1)
+            down_img = zoom(np.array(orig_img),
+                            zoom=(downsample,downsample,1),
+                            order=1)
             ind_size = np.prod(down_img.shape)
             print("Downsampled image shape:", down_img.shape)
         else:
-            ind_size = np.prod(model.input_shape)
+            ind_size = np.prod(model.transf_shape)
     elif atk_mode == "1D_one-pixel":  # 1D one pixel attack
         ind_size = 4  # pixel value, x, y, channel
     elif atk_mode == "3D_one-pixel": # 3D one pixel attack
@@ -117,41 +121,39 @@ def adversarial_attack(model: GenericModel,
 
     # prerocess original image
     # values between 0-1 and make channels first
-    orig_img_norm = torch.unsqueeze((torch.tensor(
-                                    np.array(orig_img))/255.
-                                    ).permute((2,0,1)), dim=0)
+    orig_img_norm = (torch.tensor(np.array(orig_img))/255.).permute((2,0,1))
     # process found attack noise
     if atk_mode == "R_channel_only": # one channel attack
         # reshape best found solution to match input image
         best_noise = torch.tensor(best_noise.reshape(model.input_shape[1:]))
         # create attack image
-        noisy_img_arr = orig_img_norm[0]
+        noisy_img_arr = orig_img_norm
         noisy_img_arr[0] = torch.add(noisy_img_arr[0], best_noise)
         noisy_img_arr = (noisy_img_arr.clip(0,1)*255).type(torch.uint8)
         print(noisy_img_arr.shape)
 
     elif atk_mode == "all_channels":  # 3 channels attack
         # reshape best found solution to match input image
-        best_noise = torch.tensor(best_noise)
+        best_noise = torch.tensor(best_noise).clip(-epsilon,epsilon)
         if downsample is not None:
-            best_noise = best_noise.reshape(down_img.shape)
-            best_noise = Resize(size=model.input_shape[1:]).forward(best_noise)
+            best_noise = best_noise.reshape((3,*down_img.shape[:2]))
+            best_noise = Resize(size=model.transf_shape[1:]).forward(best_noise)
         else:
-            best_noise = best_noise.reshape(model.input_shape)
+            best_noise = best_noise.reshape(model.transf_shape)
         # create attack image
         noisy_img_arr = (torch.add(orig_img_norm, best_noise
-                        ).clip(0,1)*255).type(torch.uint8)[0]
+                        ).clip(0,1)*255).type(torch.uint8)
 
     elif atk_mode == "shadow_noise":  # noise as shadow on all channels
         best_noise = torch.tensor(best_noise).clip(-epsilon,epsilon)
         # reshape best found solution to match input image
         if downsample is not None:
-            best_noise = best_noise.reshape((1,*down_img.shape[2:]))
-            best_noise = Resize(size=model.input_shape[1:]).forward(best_noise)
+            best_noise = best_noise.reshape((1,*down_img.shape[:2]))
+            best_noise = Resize(size=model.transf_shape[1:]).forward(best_noise)
         else:
-            best_noise = best_noise.reshape(model.input_shape[1:])
+            best_noise = best_noise.reshape(model.transf_shape[1:])
         # create attack image
-        noisy_img_arr = orig_img_norm[0]
+        noisy_img_arr = orig_img_norm
         noisy_img_arr = torch.add(noisy_img_arr, best_noise)
         noisy_img_arr = (noisy_img_arr.clip(0,1)*255).type(torch.uint8)
     
@@ -168,7 +170,7 @@ def adversarial_attack(model: GenericModel,
         else:
             best_noise[-1] = 1
         # add pixel noise to image
-        noisy_img_arr = orig_img_norm[0]
+        noisy_img_arr = orig_img_norm
         x = best_noise[1].type(torch.int)
         y = best_noise[2].type(torch.int)
         channel = best_noise[-1].type(torch.int)
@@ -180,9 +182,8 @@ def adversarial_attack(model: GenericModel,
         # fix coordinates
         x = (best_noise[3].clip(0,1) * model.input_shape[-2]-1).type(torch.int)
         y = (best_noise[4].clip(0,1) * model.input_shape[-1]-1).type(torch.int)
-
         # add noise to each channel of pixel
-        noisy_img_arr = orig_img_norm[0]
+        noisy_img_arr = orig_img_norm
         noisy_img_arr[0:3,x,y] += best_noise[0:3]
         noisy_img_arr = (noisy_img_arr.clip(0,1)*255).type(torch.uint8)
 

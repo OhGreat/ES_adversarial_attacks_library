@@ -22,9 +22,8 @@ def grad_cam(model_name, img_path, true_label=None,
     print(f"\nModel: {model_name}")
 
     # open image
-    img = Image.open(img_path).resize(model.input_shape[1:])
+    img = Image.open(img_path)
     img_gradCAM = np.array(deepcopy(img))
-    # print(f"Initial img shape: {np.array(img).shape}, max: {np.array(img).max()}, min: {np.array(img).min()}")
     # preprocess image
     img = model.transforms(img).unsqueeze(dim=0)
     print(f"Processed img shape: {img.shape}")
@@ -45,7 +44,6 @@ def grad_cam(model_name, img_path, true_label=None,
     pooled_gradients = torch.mean(gradients, dim=[0, 2, 3])
     # get the activations until the last convolutional layer
     activations = model.get_activations(img).detach()
-    # print("gradients shape:",gradients.shape,"activations shape:",activations.shape)
     # weight the channels by corresponding gradients
     for i in range(gradients.shape[1]):
         activations[:, i, :, :] *= pooled_gradients[i]
