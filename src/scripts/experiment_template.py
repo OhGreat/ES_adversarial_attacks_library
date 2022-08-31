@@ -50,8 +50,9 @@ if __name__ == "__main__":
             adversarial_attack(model=model,
                                 atk_image=img, atk_mode=attack,
                                  true_label=true_label, target_label=None,
-                                epsilon=0.01, ps=12, os=12*7,
-                                budget=10000, patience=5,
+                                epsilon=0.05, downsample=None,
+                                 ps=12, os=12*7,
+                                budget=1000, patience=5,
                                 batch_size=32, device=device,
                                 verbose=2, result_folder=experiment_dir)
             # gradcam of constructed noisy image

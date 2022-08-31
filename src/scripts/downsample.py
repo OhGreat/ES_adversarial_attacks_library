@@ -15,7 +15,7 @@ if __name__ == "__main__":
     # TODO: Tune for every experiment
     ##########################################################################
     # choose experiment directory
-    experiment_base_name = "results/downsample_e0.01_10k"
+    experiment_base_name = "results/downsample_testing"
     if not exists(experiment_base_name):
         makedirs(experiment_base_name)
     # results file
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     # choose models to attack
     models = [VGG, ResNet, Xception]
     mod_name =  ["vgg19", "resnet50", "xception_v3"]
-    attacks = ["all_channels"] # ["R_channel_only", "all_channels", "shadow_noise", "1D_one-pixel", "3D_one-pixel"]
+    attacks = ["shadow_noise"] # ["R_channel_only", "all_channels", "shadow_noise", "1D_one-pixel", "3D_one-pixel"]
 
     # define device
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -50,9 +50,9 @@ if __name__ == "__main__":
             adversarial_attack(model=model,
                                 atk_image=img, atk_mode=attack,
                                  true_label=true_label, target_label=None,
-                                epsilon=0.01, downsample=0.5,
+                                epsilon=0.05, #downsample=0.5,
                                  ps=12, os=12*7,
-                                budget=10000, patience=5,
+                                budget=1000, patience=5,
                                 batch_size=32, device=device,
                                 verbose=2, result_folder=experiment_dir)
             # gradcam of constructed noisy image

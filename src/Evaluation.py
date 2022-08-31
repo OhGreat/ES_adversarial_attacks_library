@@ -58,10 +58,14 @@ class LogCrossentropy:
 
         elif self.atk_mode == "shadow_noise":  # apply noise as shadow on all channels
             # clip individuals to epsilon interval
-            X.individuals = X.individuals.clip(-self.epsilon,self.epsilon)
+            inds = torch.tensor(X.individuals).clip(-self.epsilon,self.epsilon)
             # reshape to match population and image shape
-            inds = torch.tensor(X.individuals.reshape((X.pop_size, *self.model.input_shape[1:])))
-            # add noise to all channels
+            if self.downsample is not None:
+                inds = X.individuals.reshape((X.pop_size, *self.down_img_shape[2:])) 
+                inds = Resize(size=self.img_shape[1:]).forward(inds)
+            else:
+                inds = inds.reshape((X.pop_size, 1, *self.img_shape[1:]))
+            # add same noise to all channels
             solutions = torch.stack([torch.add(inds[i],self.orig_img_norm[0,:]) for i in range(len(inds))])
             # clip image, multiply by 255 and take integer values
             solutions = (solutions.clip(0,1)*255).type(torch.uint8)

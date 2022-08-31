@@ -74,7 +74,12 @@ def adversarial_attack(model: GenericModel,
 
     # define individual size depending on attack
     if atk_mode == "R_channel_only" or atk_mode == "shadow_noise":
-        ind_size = np.prod(model.input_shape[1:])
+        if downsample is not None:
+            down_img = zoom(img, zoom=(1,1,downsample,downsample), order=1)
+            ind_size = np.prod(down_img.shape[2:])
+            print("Downsampled image shape:", down_img.shape)
+        else:
+            ind_size = np.prod(model.input_shape[1:])
     elif atk_mode == "all_channels":  # all channels attack
         if downsample is not None:
             down_img = zoom(img, zoom=(1,1,downsample,downsample), order=1)
@@ -138,8 +143,13 @@ def adversarial_attack(model: GenericModel,
                         ).clip(0,1)*255).type(torch.uint8)[0]
 
     elif atk_mode == "shadow_noise":  # noise as shadow on all channels
+        best_noise = torch.tensor(best_noise).clip(-epsilon,epsilon)
         # reshape best found solution to match input image
-        best_noise = torch.tensor(best_noise.reshape(model.input_shape[1:]))
+        if downsample is not None:
+            best_noise = best_noise.reshape((1,*down_img.shape[2:]))
+            best_noise = Resize(size=model.input_shape[1:]).forward(best_noise)
+        else:
+            best_noise = best_noise.reshape(model.input_shape[1:])
         # create attack image
         noisy_img_arr = orig_img_norm[0]
         noisy_img_arr = torch.add(noisy_img_arr, best_noise)
