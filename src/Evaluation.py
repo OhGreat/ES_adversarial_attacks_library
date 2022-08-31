@@ -32,9 +32,13 @@ class LogCrossentropy:
 
         if self.atk_mode == "R_channel_only":  # noise on red channel
             # clip individuals to epsilon interval
-            X.individuals = X.individuals.clip(-self.epsilon,self.epsilon)
+            inds = torch.tensor(X.individuals).clip(-self.epsilon,self.epsilon)
             # reshape to match population and image shape
-            inds = torch.tensor(X.individuals.reshape((X.pop_size, *self.model.input_shape[1:])))
+            if self.downsample is not None:
+                inds = inds.reshape((X.pop_size, *self.down_img_shape[2:]))
+                inds = Resize(size=self.model.transf_shape[1:]).forward(inds)
+            else:
+                inds = inds.reshape((X.pop_size, *self.model.transf_shape[1:]))
             # add noise to first channel
             solutions = torch.add(self.orig_img_norm[:,0,:], inds).unsqueeze(dim=1)
             # concatenate the other two channels to our solutions,

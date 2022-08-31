@@ -32,7 +32,7 @@ if __name__ == "__main__":
     # choose models to attack
     models = [VGG, ResNet, Xception]
     mod_name =  ["vgg19", "resnet50", "xception_v3"]
-    attacks = ["all_channels", "shadow_noise" ] # ["R_channel_only", "all_channels", "shadow_noise", "1D_one-pixel", "3D_one-pixel"]
+    attacks = ["R_channel_only" ] # ["R_channel_only", "all_channels", "shadow_noise", "1D_one-pixel", "3D_one-pixel"]
 
     # define device
     device = "cuda" if torch.cuda.is_available() else "cpu"

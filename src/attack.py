@@ -124,8 +124,13 @@ def adversarial_attack(model: GenericModel,
     orig_img_norm = (torch.tensor(np.array(orig_img))/255.).permute((2,0,1))
     # process found attack noise
     if atk_mode == "R_channel_only": # one channel attack
+        best_noise = torch.tensor(best_noise).clip(-epsilon,epsilon)
         # reshape best found solution to match input image
-        best_noise = torch.tensor(best_noise.reshape(model.input_shape[1:]))
+        if downsample is not None:
+            best_noise = best_noise.reshape((1,*down_img.shape[:2]))
+            best_noise = Resize(size=model.transf_shape[1:]).forward(best_noise)
+        else:
+            best_noise = best_noise.reshape(model.transf_shape[1:])
         # create attack image
         noisy_img_arr = orig_img_norm
         noisy_img_arr[0] = torch.add(noisy_img_arr[0], best_noise)
@@ -133,8 +138,8 @@ def adversarial_attack(model: GenericModel,
         print(noisy_img_arr.shape)
 
     elif atk_mode == "all_channels":  # 3 channels attack
-        # reshape best found solution to match input image
         best_noise = torch.tensor(best_noise).clip(-epsilon,epsilon)
+        # reshape best found solution to match input image
         if downsample is not None:
             best_noise = best_noise.reshape((3,*down_img.shape[:2]))
             best_noise = Resize(size=model.transf_shape[1:]).forward(best_noise)
