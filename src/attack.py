@@ -74,8 +74,8 @@ def adversarial_attack(model: GenericModel,
     elif initial_preds.argmax(dim=1).item() != true_label:
         print("WARNING: Initial prediction does not match given true label!")
         exit()
-    # if we have a specific target class we make the problem a maximization 
-    # for the target class
+    # if we have a specific target class we make the problem 
+    # a maximization for the target class
     label = true_label if target_label is None else target_label
     minimize = True if target_label is None else False
 

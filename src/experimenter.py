@@ -70,7 +70,7 @@ def experiment( atk_img, models, attacks,
             # run attack
             adversarial_attack(model=model,
                                 atk_image=atk_img, atk_mode=attack,
-                                 true_label=true_label, target_label=None,
+                                 true_label=true_label, target_label=target_label,
                                 epsilon=epsilon, downsample=downsample,
                                 ps=ps, os=os,
                                 budget=budget, patience=patience,
@@ -98,12 +98,13 @@ def experiment( atk_img, models, attacks,
         f.close()
 
 if __name__ == "__main__":
+    # example experiment
     atk_img = "data/test/bird_11.JPEG"
     models = {"vgg19": VGG, "resnet50": ResNet, "xception_v3": Xception}
     attacks = ["R_channel_only", "all_channels", "shadow_noise", "1D_one-pixel", "3D_one-pixel"]
 
     experiment( atk_img, models, attacks, 
-                true_label=None, target_label=None,
-                ps=4, os=4, budget=10, patience=5,
+                true_label=None, target_label=84,
+                ps=4, os=24, budget=1000, patience=5,
                 batch_size=32, device=None,
                 verbose=2, exp_dir="results/temp_1")
