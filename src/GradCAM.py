@@ -22,7 +22,7 @@ def grad_cam(model_name, img_path, true_label=None,
     print(f"\nModel: {model_name}")
 
     # open image
-    img = Image.open(img_path)
+    img = Image.open(img_path).resize(model.transf_shape[1:])
     img_gradCAM = np.array(deepcopy(img))
     # preprocess image
     img = model.transforms(img).unsqueeze(dim=0)

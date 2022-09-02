@@ -15,11 +15,11 @@ from EA_components_OhGreat.Recombination import *
 
 def adversarial_attack(model: GenericModel,
                         atk_image: str, atk_mode: int,
-                        true_label: int, target_label=None,
+                        true_label=None, target_label=None,
                         epsilon=0.05, downsample=None, 
                         ps=8, os=56,
                         budget=1000, patience=3,
-                         batch_size=128, device=None,
+                        batch_size=128, device=None,
                         verbose=2, result_folder="temp"):
     """ Parameters:
             - model: Model to attack, should be one of the models implemented in the Models.py file
@@ -67,6 +67,18 @@ def adversarial_attack(model: GenericModel,
     if target_label is not None:
         print(f"Confidence on targeted class {target_label}: {np.round(initial_preds[:, target_label].item()*100,3)}%\n")
 
+    # true label control if given
+    if true_label is None:
+        true_label = initial_preds.argmax(dim=1).item()
+        print(f"True label not defined, using the predicted label {true_label} as ground truth.")
+    elif initial_preds.argmax(dim=1).item() != true_label:
+        print("WARNING: Initial prediction does not match given true label!")
+        exit()
+    # if we have a specific target class we make the problem a maximization 
+    # for the target class
+    label = true_label if target_label is None else target_label
+    minimize = True if target_label is None else False
+
     # EA parameters
     recomb = GlobalDiscrete()
     mut = IndividualSigma()
@@ -98,11 +110,6 @@ def adversarial_attack(model: GenericModel,
     else:
         exit("Select a valid attack method.")
     print("Problem dimension (individual size):", ind_size)
-
-    # if we have a specific target class we make the problem a maximization 
-    # for the target class
-    label = true_label if target_label is None else target_label
-    minimize = True if target_label is None else False
 
     # define evaluation
     eval_ = LogCrossentropy(min=minimize, atk_mode=atk_mode, init_img=orig_img, 
