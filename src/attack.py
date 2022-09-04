@@ -67,7 +67,7 @@ def adversarial_attack(model: GenericModel,
     if target_label is not None:
         print(f"Confidence on targeted class {target_label}: {np.round(initial_preds[:, target_label].item()*100,3)}%\n")
 
-    # true label control if given
+    # true label control if defined
     if true_label is None:
         true_label = initial_preds.argmax(dim=1).item()
         print(f"True label not defined, using the predicted label {true_label} as ground truth.")
@@ -80,7 +80,7 @@ def adversarial_attack(model: GenericModel,
     minimize = True if target_label is None else False
 
     # EA parameters
-    recomb = GlobalDiscrete()
+    rec = GlobalDiscrete()
     mut = IndividualSigma()
     sel = CommaSelection()
 
@@ -118,7 +118,7 @@ def adversarial_attack(model: GenericModel,
 
     # create ES 
     es = EA(minimize=minimize, budget=budget, patience=patience, parents_size=ps, 
-            offspring_size=os, individual_size=ind_size, recombination=recomb,
+            offspring_size=os, individual_size=ind_size, recombination=rec,
             mutation=mut, selection=sel, evaluation=eval_,verbose=verbose)
     # run ES
     atk_start = time.time()

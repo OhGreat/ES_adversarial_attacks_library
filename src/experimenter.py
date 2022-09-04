@@ -1,6 +1,5 @@
 import sys
-sys.path.append('.')
-sys.path.append('src')
+
 import torch
 import numpy as np
 from os import makedirs
@@ -42,13 +41,13 @@ def experiment( atk_img, models, attacks,
         # prepare model
         model = models[mod_name]().to(device)
 
-
         # append results of original image
         orig_img = Image.open(atk_img).resize(model.transf_shape[1:])
         orig_img = model.transforms(orig_img).unsqueeze(dim=0)
         with torch.no_grad():
                 pred = model.simple_eval(orig_img.to(device))
         print(f"Predicted label {pred.argmax()} with {np.round(pred.max().item()*100,2)}% confidence.")
+        # define ground truth label if not defined
         if true_label is None:
             true_label = pred.argmax()
             print("Ground truth label not defined, using argmax of above prediction as true label.")
@@ -66,7 +65,8 @@ def experiment( atk_img, models, attacks,
 
         for attack in attacks:
             # define experiment directory
-            print("Curr experiment dir:", exp_dir)
+            curr_exp_dir = f"{exp_dir}/{mod_name}/{attack}"
+            print("Curr experiment dir:", curr_exp_dir)
             # run attack
             adversarial_attack(model=model,
                                 atk_image=atk_img, atk_mode=attack,
@@ -75,16 +75,16 @@ def experiment( atk_img, models, attacks,
                                 ps=ps, os=os,
                                 budget=budget, patience=patience,
                                 batch_size=batch_size, device=device,
-                                verbose=verbose, result_folder=exp_dir)
+                                verbose=verbose, result_folder=curr_exp_dir)
             # gradcam of constructed noisy image
             grad_cam(model_name=mod_name,
-                img_path=exp_dir+"/attack_img.png",
+                img_path=curr_exp_dir+"/attack_img.png",
                 true_label=true_label,
-                result_dir=exp_dir+"/GradCAM", exp_name=f"grad" )
+                result_dir=curr_exp_dir+"/GradCAM", exp_name=f"grad" )
             print("")
 
             # write results to file
-            img_t = Image.open(exp_dir+"/attack_img.png")
+            img_t = Image.open(curr_exp_dir+"/attack_img.png")
             img_t = model.transforms(img_t).unsqueeze(dim=0)
             with torch.no_grad():
                 pred = model.simple_eval(img_t.to(device))
@@ -99,12 +99,14 @@ def experiment( atk_img, models, attacks,
 
 if __name__ == "__main__":
     # example experiment
+    exp_dir="results/temp"
     atk_img = "data/test/bird_11.JPEG"
     models = {"vgg19": VGG, "resnet50": ResNet, "xception_v3": Xception}
     attacks = ["R_channel_only", "all_channels", "shadow_noise", "1D_one-pixel", "3D_one-pixel"]
 
     experiment( atk_img, models, attacks, 
-                true_label=None, target_label=84,
-                ps=4, os=24, budget=1000, patience=5,
+                true_label=None, target_label=None,
+                epsilon=0.05, downsample=None,
+                ps=4, os=28, budget=100, patience=5,
                 batch_size=32, device=None,
-                verbose=2, exp_dir="results/temp_1")
+                verbose=2, exp_dir=exp_dir)
