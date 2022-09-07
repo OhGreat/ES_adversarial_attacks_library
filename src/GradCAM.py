@@ -5,7 +5,7 @@ from PIL import Image
 from os import makedirs
 from os.path import exists
 from copy import deepcopy
-from Models import ResNet, VGG, Xception
+from Models import *
 
 def grad_cam(model_name, img_path, true_label=None, 
             result_dir="results", exp_name="temp"):
@@ -17,6 +17,12 @@ def grad_cam(model_name, img_path, true_label=None,
         model = VGG()
     elif model_name == "xception_v3":
         model = Xception()
+    elif model_name == "vit_h_14":
+        model = VIT_H_14()
+    elif model_name == "vit_b_16":
+        model = VIT_B_16()
+    elif model_name == "swin_b":
+        model = Swin_b()
     else:
         exit("Please choose a valid model.")
     print(f"\nModel: {model_name}")

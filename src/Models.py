@@ -1,4 +1,6 @@
-from torch import nn
+import torch
+from torch import Tensor, nn
+
 
 class GenericModel(nn.Module):
     def __init__(self):
@@ -20,7 +22,7 @@ class GenericModel(nn.Module):
     def grad_cam(self):
         pass
 
-    def get_activations(self, x):
+    def get_activations(self, x: Tensor):
         """ Should pass input x through all layers before the classification head.
             Must be redefined for each specific model.
         """
@@ -28,7 +30,7 @@ class GenericModel(nn.Module):
 
     def activations_hook(self, grad):
         """ Function to call whenever the 
-            gradient with respecto to the Tensor is computed.
+            gradient with respect to the Tensor is computed.
 
             In our specific case we simply copy the gradients
         """
@@ -37,7 +39,106 @@ class GenericModel(nn.Module):
     def get_activations_gradient(self):
         return self.gradients
 
+
+class Swin_b(GenericModel):
+    def __init__(self):
+        super(Swin_b, self).__init__()
+        # define model
+        from torchvision.models import swin_b, Swin_B_Weights
+        self.weights = Swin_B_Weights.IMAGENET1K_V1
+        self.model = swin_b(weights=self.weights)
+
+        # expected input shape
+        self.input_shape = (3, 224, 224)
+
+        # expected transform shape
+        self.transf_shape = (3, 238, 238)
+
+        # image processing transformations
+        self.transforms = self.weights.transforms()
+
+    def get_activations(self, x: Tensor):
+        x = self.model.features(x)
+        x = self.model.norm(x)
+        x = x.transpose(-1,1)
+        return x
+
+    def grad_cam(self, x: Tensor):
+        x = self.get_activations(x)
+        h = x.register_hook(self.activations_hook)
+        x = self.model.avgpool(x)
+        x = x.view((1,-1))
+        x = self.model.head(x)
+
+        return x
+
+class VIT_H_14(GenericModel):
+    def __init__(self):
+        super(VIT_H_14, self).__init__()
+        # define model
+        from torchvision.models import vit_h_14, ViT_H_14_Weights
+        self.weights = ViT_H_14_Weights.IMAGENET1K_SWAG_E2E_V1
+        self.model = vit_h_14(weights=self.weights)
+        
+        # expected input shape
+        self.input_shape = (3, 518, 518)
+
+        # transform shape
+        self.transf_shape = (3, 518, 518)
+
+        # model image preprocessing transformation
+        self.transforms = self.weights.transforms()
+
+    def get_activations(self, x):
+        x = self.model.conv_proj(x)
+        x = torch.squeeze(x,dim=1)
+        
+        x = self.model.encoder(x)
+        return x
     
+    def grad_cam(self, x):
+        x = self.get_activations(x)
+        h = x.register_hook(self.activations_hook)
+        #x = x.view((1,-1))
+        x = self.model.fc(x)
+        
+        return x
+
+
+class VIT_B_16(GenericModel):
+    def __init__(self):
+        super(VIT_B_16, self).__init__()
+        # define model
+        from torchvision.models import vit_b_16, ViT_B_16_Weights
+        self.weights = ViT_B_16_Weights.IMAGENET1K_SWAG_E2E_V1   
+        self.model = vit_b_16(weights=self.weights)
+        
+        # expected input shape
+        self.input_shape = (3, 384, 384)
+
+        # transform shape
+        self.transf_shape = (3, 384, 384)
+
+        # model image preprocessing transformation
+        self.transforms = self.weights.transforms()
+
+    def get_activations(self, x: Tensor):
+        print(x.shape)
+        x = self.model.conv_proj(x)
+        print(x.shape)
+        # x = x.view(*x.shape[:2], x.shape[2]*x.shape[3])
+        # print(x.shape)
+        x = self.model.encoder(x)
+        return x
+    
+    def grad_cam(self, x):
+        x = self.get_activations(x)
+        h = x.register_hook(self.activations_hook)
+        # x = x.view((1,-1))
+        x = self.model.fc(x)
+        return x
+    
+
 class Xception(GenericModel):
     def __init__(self):
         super(Xception, self).__init__()
