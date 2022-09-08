@@ -5,10 +5,13 @@ from torch import Tensor, nn
 class GenericModel(nn.Module):
     def __init__(self):
         super(GenericModel, self).__init__()
+        self.name = None
+        self.weights = None
         self.model = None
         self.gradients = None
         self.input_shape = None
         self.transf_shape = None
+        self.transforms = None
     
     def simple_eval(self, x):
         self.eval()
@@ -43,6 +46,8 @@ class GenericModel(nn.Module):
 class Swin_b(GenericModel):
     def __init__(self):
         super(Swin_b, self).__init__()
+        # model name
+        self.name = "swin_b"
         # define model
         from torchvision.models import swin_b, Swin_B_Weights
         self.weights = Swin_B_Weights.IMAGENET1K_V1
@@ -72,9 +77,11 @@ class Swin_b(GenericModel):
 
         return x
 
-class VIT_H_14(GenericModel):
+class ViT_H_14(GenericModel):
     def __init__(self):
-        super(VIT_H_14, self).__init__()
+        super(ViT_H_14, self).__init__()
+        # model name
+        self.name = "vit_h_14"
         # define model
         from torchvision.models import vit_h_14, ViT_H_14_Weights
         self.weights = ViT_H_14_Weights.IMAGENET1K_SWAG_E2E_V1
@@ -105,9 +112,11 @@ class VIT_H_14(GenericModel):
         return x
 
 
-class VIT_B_16(GenericModel):
+class ViT_B_16(GenericModel):
     def __init__(self):
-        super(VIT_B_16, self).__init__()
+        super(ViT_B_16, self).__init__()
+        # model name
+        self.name = "vit_b_16"
         # define model
         from torchvision.models import vit_b_16, ViT_B_16_Weights
         self.weights = ViT_B_16_Weights.IMAGENET1K_SWAG_E2E_V1   
@@ -139,10 +148,11 @@ class VIT_B_16(GenericModel):
         return x
     
 
-class Xception(GenericModel):
+class InceptionV3(GenericModel):
     def __init__(self):
-        super(Xception, self).__init__()
-
+        super(InceptionV3, self).__init__()
+        # model name
+        self.name = "inception_v3"
         # define model
         from torchvision.models import inception_v3, Inception_V3_Weights
         self.weights = Inception_V3_Weights.IMAGENET1K_V1
@@ -191,10 +201,11 @@ class Xception(GenericModel):
         return x
 
 
-class ResNet(GenericModel):
+class ResNet50(GenericModel):
     def __init__(self):
-        super(ResNet, self).__init__()
-
+        super(ResNet50, self).__init__()
+        # model name
+        self.name = "resnet50"
         # define resnet and weights
         from torchvision.models import resnet50, ResNet50_Weights
         self.weights = ResNet50_Weights.IMAGENET1K_V2
@@ -237,9 +248,11 @@ class ResNet(GenericModel):
         return x
 
 
-class VGG(GenericModel):
+class VGG19(GenericModel):
     def __init__(self):
-        super(VGG, self).__init__()
+        super(VGG19, self).__init__()
+        # model name
+        self.name = "vgg19"
         from torchvision.models import vgg19, VGG19_Weights
 
         # get the pretrained VGG19 network

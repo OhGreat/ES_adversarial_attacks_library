@@ -7,31 +7,20 @@ from os.path import exists
 from copy import deepcopy
 from Models import *
 
-def grad_cam(model_name, img_path, true_label=None, 
-            result_dir="results", exp_name="temp"):
+def grad_cam(model: GenericModel, img_path, true_label=None, 
+            result_dir="results", exp_name="temp", device=None):
 
-    # choose working model
-    if model_name == "resnet50":
-        model = ResNet()
-    elif model_name == "vgg19":
-        model = VGG()
-    elif model_name == "xception_v3":
-        model = Xception()
-    elif model_name == "vit_h_14":
-        model = VIT_H_14()
-    elif model_name == "vit_b_16":
-        model = VIT_B_16()
-    elif model_name == "swin_b":
-        model = Swin_b()
-    else:
-        exit("Please choose a valid model.")
-    print(f"\nModel: {model_name}")
+
+    print(f"\nModel: {model.name}")
+    # define computing device
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # open image
     img = Image.open(img_path).resize(model.transf_shape[1:])
     img_gradCAM = np.array(deepcopy(img))
     # preprocess image
-    img = model.transforms(img).unsqueeze(dim=0)
+    img = model.transforms(img).unsqueeze(dim=0).to(device)
     print(f"Processed img shape: {img.shape}")
     # predict image
     pred = model.simple_eval(img)
@@ -57,14 +46,16 @@ def grad_cam(model_name, img_path, true_label=None,
     # average the channels of the activations
     heatmap = torch.mean(activations, dim=1).squeeze()
     # apply relu as in original publication
-    heatmap = np.maximum(heatmap, 0)
+    heatmap = torch.maximum(heatmap, torch.zeros_like(heatmap))
     # normalize the heatmap
     heatmap /= torch.max(heatmap)
-
+    
     # make sure results directory exists
     if not exists(result_dir):
         makedirs(result_dir)
     # create heatmap and combined image
+    if device == "cuda":
+        heatmap = heatmap.cpu()
     heatmap_img, heated_img = create_images(heatmap=heatmap.numpy(), img=img_gradCAM)
     # save image and heatmap
     cv2.imwrite(f'./{result_dir}/{exp_name}_combined.jpg', heated_img)

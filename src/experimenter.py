@@ -7,7 +7,7 @@ from os.path import exists
 from PIL import Image
 from src.attack import adversarial_attack
 from src.GradCAM import grad_cam
-from src.Models import VGG, ResNet, Xception
+from src.Models import *
 
 
 def experiment( atk_img, models, attacks, 
@@ -40,6 +40,7 @@ def experiment( atk_img, models, attacks,
     for mod_name in models:
         # prepare model
         model = models[mod_name]().to(device)
+        print(f"~~~ Model: {model.name} ~~~")
 
         # append results of original image
         orig_img = Image.open(atk_img).resize(model.transf_shape[1:])
@@ -57,7 +58,7 @@ def experiment( atk_img, models, attacks,
 
         # create original gradCAM
         orig_path = f"{exp_dir}/{mod_name}/GradCAM_orig"
-        grad_cam(model_name=mod_name,
+        grad_cam(model=model, device=device,
                 img_path=atk_img,
                 true_label=true_label,
                 result_dir=orig_path, exp_name=f"orig_gradCAM")
@@ -77,7 +78,7 @@ def experiment( atk_img, models, attacks,
                                 batch_size=batch_size, device=device,
                                 verbose=verbose, result_folder=curr_exp_dir)
             # gradcam of constructed noisy image
-            grad_cam(model_name=mod_name,
+            grad_cam(model=model, device=device,
                 img_path=curr_exp_dir+"/attack_img.png",
                 true_label=true_label,
                 result_dir=curr_exp_dir+"/GradCAM", exp_name=f"grad" )
@@ -96,17 +97,3 @@ def experiment( atk_img, models, attacks,
         f = open(f_name, "a")
         f.write("\n")
         f.close()
-
-if __name__ == "__main__":
-    # example experiment
-    exp_dir="results/temp"
-    atk_img = "data/test/bird_11.JPEG"
-    models = {"vgg19": VGG, "resnet50": ResNet, "xception_v3": Xception}
-    attacks = ["R_channel_only", "all_channels", "shadow_noise", "1D_one-pixel", "3D_one-pixel"]
-
-    experiment( atk_img, models, attacks, 
-                true_label=None, target_label=None,
-                epsilon=0.05, downsample=None,
-                ps=4, os=28, budget=100, patience=5,
-                batch_size=32, device=None,
-                verbose=2, exp_dir=exp_dir)
