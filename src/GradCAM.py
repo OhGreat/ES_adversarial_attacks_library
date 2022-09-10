@@ -35,10 +35,18 @@ def grad_cam(model: GenericModel, img_path, true_label=None,
     pred[:, 0].backward()
     # get the gradients
     gradients = model.get_activations_gradient()
+    print("gradients:", gradients.shape, gradients.max(), gradients.min())
+    print(gradients[:,0,:].max())
+    gradients = model.reshape_gradients(gradients)
+    print("gradients reshaped:", gradients.shape, gradients.max(), gradients.min())
     # pool gradients across channels
     pooled_gradients = torch.mean(gradients, dim=[0, 2, 3])
+    print("pooled gradients:",pooled_gradients.shape, pooled_gradients.max(), pooled_gradients.min())
     # get the activations until the last convolutional layer
     activations = model.get_activations(img).detach()
+    print("activations:",activations.shape, activations.max(), activations.min())
+    activations = model.reshape_gradients(activations)
+    print("activations reshape:",activations.shape, activations.max(), activations.min())
     # weight the channels by corresponding gradients
     for i in range(gradients.shape[1]):
         activations[:, i, :, :] *= pooled_gradients[i]

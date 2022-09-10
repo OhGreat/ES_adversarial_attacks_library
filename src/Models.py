@@ -42,6 +42,9 @@ class GenericModel(nn.Module):
     def get_activations_gradient(self):
         return self.gradients
 
+    def reshape_gradients(self, x):
+        return x
+
 
 class Swin_b(GenericModel):
     def __init__(self):
@@ -65,7 +68,7 @@ class Swin_b(GenericModel):
     def get_activations(self, x: Tensor):
         x = self.model.features(x)
         x = self.model.norm(x)
-        x = x.transpose(-1,1)
+        x = x.transpose(2, 3).transpose(1, 2)
         return x
 
     def grad_cam(self, x: Tensor):
@@ -74,10 +77,51 @@ class Swin_b(GenericModel):
         x = self.model.avgpool(x)
         x = x.view((1,-1))
         x = self.model.head(x)
-
         return x
 
+
+class ViT_B_16(GenericModel):
+    # TODO: fix gradients for Grad-CAM
+    def __init__(self):
+        super(ViT_B_16, self).__init__()
+        # model name
+        self.name = "vit_b_16"
+        # define model
+        from torchvision.models import vit_b_16, ViT_B_16_Weights
+        self.weights = ViT_B_16_Weights.IMAGENET1K_V1   
+        self.model = vit_b_16(weights=self.weights)
+        
+        # expected input shape
+        self.input_shape = (3, 224, 224)
+
+        # transform shape
+        self.transf_shape = (3, 256, 256)
+
+        # model image preprocessing transformation
+        self.transforms = self.weights.transforms()
+
+    def get_activations(self, x: Tensor):
+        x = self.model._process_input(x)
+        batch_class_token = self.model.class_token.expand(x.shape[0], -1, -1)
+        x = torch.cat([batch_class_token, x], dim=1)
+        x = self.model.encoder(x)
+        return x
+    
+    def grad_cam(self, x):
+        x = self.get_activations(x)
+        h = x.register_hook(self.activations_hook)
+        x = x[:, 0]
+        x = self.model.heads(x)
+        return x
+
+    def reshape_gradients(self, x: Tensor):
+        x = x[:,1:,:].reshape(x.shape[0], 14, 14, x.shape[2])
+        x = x.transpose(2,3).transpose(1,2)
+        return x
+
+
 class ViT_H_14(GenericModel):
+    # TODO: fix model
     def __init__(self):
         super(ViT_H_14, self).__init__()
         # model name
@@ -99,7 +143,6 @@ class ViT_H_14(GenericModel):
     def get_activations(self, x):
         x = self.model.conv_proj(x)
         x = torch.squeeze(x,dim=1)
-        
         x = self.model.encoder(x)
         return x
     
@@ -107,43 +150,6 @@ class ViT_H_14(GenericModel):
         x = self.get_activations(x)
         h = x.register_hook(self.activations_hook)
         #x = x.view((1,-1))
-        x = self.model.fc(x)
-        
-        return x
-
-
-class ViT_B_16(GenericModel):
-    def __init__(self):
-        super(ViT_B_16, self).__init__()
-        # model name
-        self.name = "vit_b_16"
-        # define model
-        from torchvision.models import vit_b_16, ViT_B_16_Weights
-        self.weights = ViT_B_16_Weights.IMAGENET1K_SWAG_E2E_V1   
-        self.model = vit_b_16(weights=self.weights)
-        
-        # expected input shape
-        self.input_shape = (3, 384, 384)
-
-        # transform shape
-        self.transf_shape = (3, 384, 384)
-
-        # model image preprocessing transformation
-        self.transforms = self.weights.transforms()
-
-    def get_activations(self, x: Tensor):
-        print(x.shape)
-        x = self.model.conv_proj(x)
-        print(x.shape)
-        # x = x.view(*x.shape[:2], x.shape[2]*x.shape[3])
-        # print(x.shape)
-        x = self.model.encoder(x)
-        return x
-    
-    def grad_cam(self, x):
-        x = self.get_activations(x)
-        h = x.register_hook(self.activations_hook)
-        # x = x.view((1,-1))
         x = self.model.fc(x)
         return x
     
@@ -197,7 +203,6 @@ class InceptionV3(GenericModel):
         x = self.model.avgpool(x)
         x = x.view((1,-1))
         x = self.model.fc(x)
-
         return x
 
 
@@ -223,15 +228,12 @@ class ResNet50(GenericModel):
     def grad_cam(self, x):
         # model before classification head
         x = self.get_activations(x)
-        
         # register the hook
         h = x.register_hook(self.activations_hook)
-
         # avg pooling + classification head
         x = self.model.avgpool(x)
         x = x.view((1, -1))
         x = self.model.fc(x)
-
         return x
 
     def get_activations(self, x):
@@ -280,10 +282,8 @@ class VGG19(GenericModel):
         
     def grad_cam(self, x):
         x = self.features_conv(x)
-        
         # register the hook
         h = x.register_hook(self.activations_hook)
-        
         # apply the max pooling
         x = self.max_pool(x)
         x = x.view((1, -1))
