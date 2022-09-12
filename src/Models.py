@@ -1,5 +1,6 @@
 import torch
 from torch import Tensor, nn
+from copy import deepcopy
 
 
 class GenericModel(nn.Module):
@@ -104,12 +105,16 @@ class ViT_B_16(GenericModel):
         x = self.model._process_input(x)
         batch_class_token = self.model.class_token.expand(x.shape[0], -1, -1)
         x = torch.cat([batch_class_token, x], dim=1)
-        x = self.model.encoder(x)
+        x = x + self.model.encoder.pos_embedding
+        for layer in self.model.encoder.layers[:-2]:
+            x = layer(x)
         return x
     
     def grad_cam(self, x):
         x = self.get_activations(x)
         h = x.register_hook(self.activations_hook)
+        x = self.model.encoder.layers[-2:](x)
+        x = self.model.encoder.ln(x)
         x = x[:, 0]
         x = self.model.heads(x)
         return x
@@ -191,7 +196,6 @@ class InceptionV3(GenericModel):
         x = self.model.Mixed_6c(x)
         x = self.model.Mixed_6d(x)
         x = self.model.Mixed_6e(x)
-        #x = self.model.aux_logits(x)
         x = self.model.Mixed_7a(x)
         x = self.model.Mixed_7b(x)
         x = self.model.Mixed_7c(x)

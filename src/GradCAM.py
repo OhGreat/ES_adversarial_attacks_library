@@ -36,7 +36,6 @@ def grad_cam(model: GenericModel, img_path, true_label=None,
     # get the gradients
     gradients = model.get_activations_gradient()
     print("gradients:", gradients.shape, gradients.max(), gradients.min())
-    print(gradients[:,0,:].max())
     gradients = model.reshape_gradients(gradients)
     print("gradients reshaped:", gradients.shape, gradients.max(), gradients.min())
     # pool gradients across channels
@@ -70,7 +69,7 @@ def grad_cam(model: GenericModel, img_path, true_label=None,
     cv2.imwrite(f'./{result_dir}/{exp_name}_heatmap.jpg', heatmap_img)
     print("Grad-CAM images created succesfully in directory:",result_dir)
 
-def create_images(heatmap, img, heatmap_mul=0.3):
+def create_images(heatmap, img, heatmap_mul=0.5):
     # create superimposed image
     # img = cv2.imread(img_path)
     heatmap = cv2.resize(heatmap, (img.shape[1], img.shape[0]))
