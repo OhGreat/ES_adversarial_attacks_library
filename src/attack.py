@@ -14,7 +14,7 @@ from EA_components_OhGreat.Selection import *
 from EA_components_OhGreat.Recombination import *
 
 def adversarial_attack(model: GenericModel,
-                        atk_image: str, atk_mode: int,
+                        atk_image: str, atk_mode: int, es=None,
                         true_label=None, target_label=None,
                         epsilon=0.05, downsample=None, 
                         ps=8, os=56,
@@ -79,13 +79,17 @@ def adversarial_attack(model: GenericModel,
     label = true_label if target_label is None else target_label
     minimize = True if target_label is None else False
 
-    # EA parameters
-    rec = GlobalDiscrete()
-    mut = IndividualSigma()
-    sel = CommaSelection()
+    # EA strategy
+    if es == None:
+        es = {}
+        es['rec'] = GlobalDiscrete()
+        es['mut'] = IndividualSigma()
+        es['sel'] = CommaSelection()
+    elif 'rec' not in es or 'mut' not in es or 'sel' not in es:
+        exit('Invalid evolutionary strategy. Make sure keys "rec", "mut" and "sel" are defined.')
 
-    # define individual size depending on attack
-    if atk_mode == "R_channel_only" or atk_mode == "shadow_noise":
+    # define EA size
+    if atk_mode == "R_channel" or atk_mode == "shadow_noise":
         if downsample is not None:
             down_img = zoom(np.array(orig_img), 
                             zoom=(downsample,downsample,1), 
@@ -116,91 +120,24 @@ def adversarial_attack(model: GenericModel,
                             epsilon=epsilon, downsample=downsample, label=label,
                             model=model, batch_size=batch_size, device=device)
 
-    # create ES 
+    # create EA
     es = EA(minimize=minimize, budget=budget, patience=patience, parents_size=ps, 
-            offspring_size=os, individual_size=ind_size, recombination=rec,
-            mutation=mut, selection=sel, evaluation=eval_,verbose=verbose)
-    # run ES
+            offspring_size=os, individual_size=ind_size, recombination=es['rec'],
+            mutation=es['mut'], selection=es['sel'], evaluation=eval_,verbose=verbose)
+    # run EA
     atk_start = time.time()
     best_noise, _ = es.run()
     atk_end = time.time()
-    print(f'Attack time: {np.round((atk_end- atk_start)/60,2)} minutes')
+    print(f'Attack time: {np.round((atk_end- atk_start)/60,2)} minutes.')
 
-    # prerocess original image
-    # values between 0-1 and make channels first
-    orig_img_norm = (torch.tensor(np.array(orig_img))/255.).permute((2,0,1))
-    # process found attack noise
-    if atk_mode == "R_channel_only": # one channel attack
-        best_noise = torch.tensor(best_noise).clip(-epsilon,epsilon)
-        # reshape best found solution to match input image
-        if downsample is not None:
-            best_noise = best_noise.reshape((1,*down_img.shape[:2]))
-            best_noise = Resize(size=model.transf_shape[1:]).forward(best_noise)
-        else:
-            best_noise = best_noise.reshape(model.transf_shape[1:])
-        # create attack image
-        noisy_img_arr = orig_img_norm
-        noisy_img_arr[0] = torch.add(noisy_img_arr[0], best_noise)
-        noisy_img_arr = (noisy_img_arr.clip(0,1)*255).type(torch.uint8)
-        print(noisy_img_arr.shape)
-
-    elif atk_mode == "all_channels":  # 3 channels attack
-        best_noise = torch.tensor(best_noise).clip(-epsilon,epsilon)
-        # reshape best found solution to match input image
-        if downsample is not None:
-            best_noise = best_noise.reshape((3,*down_img.shape[:2]))
-            best_noise = Resize(size=model.transf_shape[1:]).forward(best_noise)
-        else:
-            best_noise = best_noise.reshape(model.transf_shape)
-        # create attack image
-        noisy_img_arr = (torch.add(orig_img_norm, best_noise
-                        ).clip(0,1)*255).type(torch.uint8)
-
-    elif atk_mode == "shadow_noise":  # noise as shadow on all channels
-        best_noise = torch.tensor(best_noise).clip(-epsilon,epsilon)
-        # reshape best found solution to match input image
-        if downsample is not None:
-            best_noise = best_noise.reshape((1,*down_img.shape[:2]))
-            best_noise = Resize(size=model.transf_shape[1:]).forward(best_noise)
-        else:
-            best_noise = best_noise.reshape(model.transf_shape[1:])
-        # create attack image
-        noisy_img_arr = orig_img_norm
-        noisy_img_arr = torch.add(noisy_img_arr, best_noise)
-        noisy_img_arr = (noisy_img_arr.clip(0,1)*255).type(torch.uint8)
+    # process best found solution
+    ind = Population(pop_size=1,ind_size=best_noise.size, mutation=None)
+    ind.individuals = best_noise
+    noisy_img_arr = eval_.__call__(ind, ret_sol=True)[0]
     
-    elif atk_mode == "1D_one-pixel":  # 1D one pixel attack
-        best_noise = torch.tensor(best_noise)
-        # fix coordinates
-        best_noise[1] = (best_noise[1].clip(0,1) * model.input_shape[-2]-1)
-        best_noise[2] = (best_noise[2].clip(0,1) * model.input_shape[-1]-1)
-        # fix channel
-        if best_noise[-1] < 0.33:
-            best_noise[-1] = 0
-        elif best_noise[-1] >= 0.66:
-            best_noise[-1] = 2
-        else:
-            best_noise[-1] = 1
-        # add pixel noise to image
-        noisy_img_arr = orig_img_norm
-        x = best_noise[1].type(torch.int)
-        y = best_noise[2].type(torch.int)
-        channel = best_noise[-1].type(torch.int)
-        noisy_img_arr[channel,x,y] += best_noise[0]
-        noisy_img_arr = (noisy_img_arr.clip(0,1)*255).type(torch.uint8)
-    
-    elif atk_mode == "3D_one-pixel":  # 3D one pixel attack
-        best_noise = torch.tensor(best_noise)
-        # fix coordinates
-        x = (best_noise[3].clip(0,1) * model.input_shape[-2]-1).type(torch.int)
-        y = (best_noise[4].clip(0,1) * model.input_shape[-1]-1).type(torch.int)
-        # add noise to each channel of pixel
-        noisy_img_arr = orig_img_norm
-        noisy_img_arr[0:3,x,y] += best_noise[0:3]
-        noisy_img_arr = (noisy_img_arr.clip(0,1)*255).type(torch.uint8)
-
     # save the best found noise as .npy file
     np.save(file=f'{result_folder}/noise',arr=best_noise)
+    
     # save complete attack image as png
     # moveaxis puts the channels in last dimension
     noisy_img = Image.fromarray(np.moveaxis(noisy_img_arr.numpy(),0,2))

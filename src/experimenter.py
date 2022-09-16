@@ -10,7 +10,7 @@ from src.GradCAM import grad_cam
 from src.Models import *
 
 
-def experiment( atk_img, models, attacks, 
+def experiment( atk_img, models, attacks, es=None,
                 true_label=None, target_label=None,
                 ps=12, os=12*7, budget=1000, 
                 epsilon=0.05, downsample=None,
@@ -69,7 +69,7 @@ def experiment( atk_img, models, attacks,
             curr_exp_dir = f"{exp_dir}/{mod_name}/{attack}"
             print("Curr experiment dir:", curr_exp_dir)
             # run attack
-            adversarial_attack(model=model,
+            adversarial_attack(model=model, es=es,
                                 atk_image=atk_img, atk_mode=attack,
                                  true_label=true_label, target_label=target_label,
                                 epsilon=epsilon, downsample=downsample,

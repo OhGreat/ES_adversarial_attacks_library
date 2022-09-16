@@ -1,3 +1,4 @@
+from copy import deepcopy
 import torch
 import numpy as np
 from scipy.ndimage import zoom
@@ -28,9 +29,9 @@ class LogCrossentropy:
         """
         return np.inf if self.min else -np.inf
 
-    def __call__(self, X: Population):
+    def __call__(self, X: Population, ret_sol=False):
 
-        if self.atk_mode == "R_channel_only":  # noise on red channel
+        if self.atk_mode == "R_channel":  # noise on red channel
             # clip individuals to epsilon interval
             inds = torch.tensor(X.individuals).clip(-self.epsilon,self.epsilon)
             # reshape to match population and image shape
@@ -122,6 +123,9 @@ class LogCrossentropy:
         else:
             exit('Please choose a correct attack modality.')
 
+        # make a copy if we need to return solution later
+        if ret_sol: sol_copy = deepcopy(solutions)
+
         # apply model transformations to noised image attacks
         solutions = self.model.transforms(solutions)
 
@@ -141,6 +145,7 @@ class LogCrossentropy:
                     curr_best_eval = pred[:, self.label]
         # update individual fitnesses
         X.fitnesses = np.array(fitnesses)
-        print("Current best confidence:",curr_best_eval.item())
         
-
+        if ret_sol: return sol_copy
+        else:
+            print("Current best confidence:",curr_best_eval.item())

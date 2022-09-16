@@ -6,22 +6,23 @@ The purpose of this work is twofold, aiming to quantify the robustness of differ
 
 
 ## Implementations
-A number of different evaluation functions has been created in order to model the adversarial attacks. More specifically, the following modes have been implemented:
+A number of different evaluation functions has been created in order to model the `adversarial attacks`. More specifically, the following modes have been implemented:
 - "R_channel_only" : creates noise for each pixel in the red channel.
-- "all_channels" : creates noise for each pixel in every channel.
+- "all_channels" : creates noise for each pixel in every channel. Similarly to what is presented in <a href="tiling_es">[3]</a>
 - "shadow_noise" : like the R_channel_only but applies the noise to all channels. 
-- "3D_one-pixel" : one pixel noise for each channel as <a href="#one_pixel_atk">[2]</a>.
+- "3D_one-pixel" : one pixel noise for each channel as described in <a href="#one_pixel_atk">[2]</a>.
 - "1D_one-pixel" : like above but the noise is applied to only one channel.
 
-The models implemented for the Grad-CAM are the following:
+The implemented `models` for the Grad-CAM are the following:
 - VGG19
 - ResNet50
 - XceptionV3
-- ViT (to be implemented)
+- VisionTransformer
+- SwinTransformer
 
 
 ## Installation
-To use the repository a Python 3 environment is required. It is recommended to use Anaconda as a virtual environment as the installation for pytorch becomes pretty straightforward. After creating an anaconda environment you can use the following commands to install the required packages:
+To use the repository a `Python 3` environment is required. Using Anaconda is recommended. After creating an anaconda environment you can use the following commands to install the required packages:
 
 To install pytorch:
 ```bash
@@ -45,4 +46,9 @@ R. R. Selvaraju, M. Cogswell, A. Das, R. Vedantam, D. Parikh and D. Batra, "Grad
 <div id="one_pixel_atk">
 [2].<br/>
 J. Su, D. V. Vargas and K. Sakurai, "One Pixel Attack for Fooling Deep Neural Networks," in IEEE Transactions on Evolutionary Computation, vol. 23, no. 5, pp. 828-841, Oct. 2019, doi: 10.1109/TEVC.2019.2890858.
+</div>
+<br/>
+<div id="tiling_es">
+[3].<br/>
+Qiu, Hao & Custode, Leonardo & Iacca, Giovanni. (2021). Black-box adversarial attacks using evolution strategies. 1827-1833. 10.1145/3449726.3463137. 
 </div>
