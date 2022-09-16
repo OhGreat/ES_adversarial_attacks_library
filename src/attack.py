@@ -13,11 +13,11 @@ from EA_components_OhGreat.Mutation import *
 from EA_components_OhGreat.Selection import *
 from EA_components_OhGreat.Recombination import *
 
-def adversarial_attack(model: GenericModel,
-                        atk_image: str, atk_mode: int, es=None,
+def adversarial_attack( model: GenericModel,
+                        atk_image: str, atk_mode: int,
                         true_label=None, target_label=None,
+                        es=None, ps=8, os=56,
                         epsilon=0.05, downsample=None, 
-                        ps=8, os=56,
                         budget=1000, patience=3,
                         batch_size=128, device=None,
                         verbose=2, result_folder="temp"):
@@ -53,12 +53,11 @@ def adversarial_attack(model: GenericModel,
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # open original image
-    orig_img = Image.open(atk_image).resize(model.transf_shape[1:])
+    orig_img = Image.open(atk_image)
     # save the original image resized to match model image size
-    orig_img.save(f'{result_folder}/orig_resized.png')
+    img = orig_img.resize(model.transf_shape[1:])
+    img.save(f'{result_folder}/orig_resized.png')
     # process image for model
-    model = model
-    img = deepcopy(orig_img)
     img = model.transforms(img).unsqueeze(dim=0)
     print("Preprocessed input image shape:",img.shape)
     # predict label and confidence for initial image
@@ -88,37 +87,13 @@ def adversarial_attack(model: GenericModel,
     elif 'rec' not in es or 'mut' not in es or 'sel' not in es:
         exit('Invalid evolutionary strategy. Make sure keys "rec", "mut" and "sel" are defined.')
 
-    # define EA size
-    if atk_mode == "R_channel" or atk_mode == "shadow_noise":
-        if downsample is not None:
-            down_img = zoom(np.array(orig_img), 
-                            zoom=(downsample,downsample,1), 
-                            order=1)
-            ind_size = np.prod(down_img.shape[:2])
-            print("Downsampled image shape:", down_img.shape)
-        else:
-            ind_size = np.prod(model.transf_shape[1:])
-    elif atk_mode == "all_channels":  # all channels attack
-        if downsample is not None:
-            down_img = zoom(np.array(orig_img),
-                            zoom=(downsample,downsample,1),
-                            order=1)
-            ind_size = np.prod(down_img.shape)
-            print("Downsampled image shape:", down_img.shape)
-        else:
-            ind_size = np.prod(model.transf_shape)
-    elif atk_mode == "1D_one-pixel":  # 1D one pixel attack
-        ind_size = 4  # pixel value, x, y, channel
-    elif atk_mode == "3D_one-pixel": # 3D one pixel attack
-        ind_size = 5
-    else:
-        exit("Select a valid attack method.")
-    print("Problem dimension (individual size):", ind_size)
-
     # define evaluation
     eval_ = LogCrossentropy(min=minimize, atk_mode=atk_mode, init_img=orig_img, 
                             epsilon=epsilon, downsample=downsample, label=label,
                             model=model, batch_size=batch_size, device=device)
+    
+    # get individual size from evaluator
+    ind_size = eval_.ind_size
 
     # create EA
     es = EA(minimize=minimize, budget=budget, patience=patience, parents_size=ps, 
@@ -129,23 +104,24 @@ def adversarial_attack(model: GenericModel,
     best_noise, _ = es.run()
     atk_end = time.time()
     print(f'Attack time: {np.round((atk_end- atk_start)/60,2)} minutes.')
-
-    # process best found solution
-    ind = Population(pop_size=1,ind_size=best_noise.size, mutation=None)
-    ind.individuals = best_noise
-    noisy_img_arr = eval_.__call__(ind, ret_sol=True)[0]
     
     # save the best found noise as .npy file
     np.save(file=f'{result_folder}/noise',arr=best_noise)
+
+    # process best found solution over our image
+    ind = Population(pop_size=1,ind_size=best_noise.size, mutation=None)
+    ind.individuals = np.reshape(best_noise, (1,*best_noise.shape))
+    noisy_img = eval_.__call__(ind, ret_sol=True)[0]
+    
     
     # save complete attack image as png
     # moveaxis puts the channels in last dimension
-    noisy_img = Image.fromarray(np.moveaxis(noisy_img_arr.numpy(),0,2))
+    noisy_img = Image.fromarray(np.moveaxis(noisy_img.numpy(),0,2))
     noisy_img.save(f"{result_folder}/attack_img.png")
 
     # evaluate our final image
-    img_model = model.transforms(noisy_img).unsqueeze(dim=0)
-    pred = model.simple_eval(img_model.to(device))
+    noisy_img = model.transforms(noisy_img).unsqueeze(dim=0)
+    pred = model.simple_eval(noisy_img.to(device))
     print(f"Final evaluation pred class: {pred.argmax(axis=1).item()}, confidence: {np.round(pred.max().item()*100,2)}%, confidence original: {np.round(pred[:, true_label].item()*100,2)}%")
     if target_label is not None:
         print(f"Confidence on targeted class {target_label}: {np.round(pred[:, target_label].item()*100,2)}%")
