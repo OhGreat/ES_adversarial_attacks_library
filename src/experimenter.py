@@ -17,10 +17,25 @@ def experiment( atk_img, models, attacks, es=None,
                 patience=5, exp_dir="results/temp",
                 batch_size=32, device=None,
                 verbose=2):
-    """
-        models is a dictionary where the keys are the names of the folders and the items are the models.
-        example: models = {"vgg19": VGG, "resnet50": ResNet, "xception_v3": Xception}
-
+    """Args:
+        - atk_img:
+        - models: (dict) keys are the names of the folders and the items are the models.
+                example: models = {"vgg19": VGG, "resnet50": ResNet, "xception_v3": Xception}
+        - attacks: (list) list of (str) attack methods to use.
+        - es: (dict) keys should be 'rec', 'mut', 'sel'. Values should be the functions of the strategy.
+                example: es = {'rec': GlobalDiscrete(), 'mut':IndividualSigma(), 'sel': CommaSelection()}
+        - true_label: (int) real label whose confidence should be minimized.
+        - target_label: (int) value of the label we want to maximize confidence.
+        - ps: (int) defines the number of parents.
+        - os: (int) defines the number of ossprings per generation.
+        - budget: (int) number of maximum fitness function evaluations.
+        - epsilon: (float) constraints the noise to an interval of [-e,e].
+        - downsample: (float)
+        - patience: (int) number of epochs to wait before resetting sigmas, if no new best is found.
+        - exp_dir: (str) experiment directory to save results.
+        - batch_size: (int) size of the batch to pass to the model.
+        - device: (str) defines the torch device to use for computations.
+        - verbose: (int) defines the intensity of prints.
         attacks is an array with the names of attacks to use.
         example: attacks = ["R_channel_only", "all_channels", "shadow_noise", "1D_one-pixel", "3D_one-pixel"]   
     """
@@ -95,3 +110,7 @@ def experiment( atk_img, models, attacks, es=None,
         
         with open(f_name, "a") as f:
             f.write("\n")
+
+
+def bulk_experiment():
+    pass

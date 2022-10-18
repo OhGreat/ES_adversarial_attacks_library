@@ -46,7 +46,7 @@ All implemented models can be found in the `src/Models.py` file. The `GenericMod
 - self.transf_shape: (tuple) model transforms shape in channels first format
 - self.transforms: (T.Compose) pytorch transforms to use for preprocessing.
 
-- def self.get_activations(x): passes the input through all the layers that we 
+- def self.get_activations(x): all the layers that we want to collect gradients from. 
 
 ### Grad-CAM
 The file `GradCAM.py` under the *src* folder contains the Grad-CAM implementation, which can be used as below:

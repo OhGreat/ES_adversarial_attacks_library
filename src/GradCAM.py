@@ -9,7 +9,16 @@ from Models import *
 
 def grad_cam(model: GenericModel, img_path, true_label=None, 
             result_dir="results", exp_name="temp", device=None):
-
+    """ Creates Grad-CAM representations of the input image for the given model.
+        Args:
+        - model: model as defined in Models.py
+        - img_path: (str) path to the input image
+        - true_label: (int) true label of the image
+        - result_dir: (str) directory to save results
+        - exp_name: (str) name of the experiment and output image
+        - device: (str) device to use for computations
+    
+    """
 
     print(f"\nModel: {model.name}")
     # define computing device
