@@ -1,11 +1,8 @@
 import torch
 import time
 from PIL import Image
-from scipy.ndimage import zoom
-from copy import deepcopy
 from os import makedirs
 from os.path import exists
-from torchvision.transforms import Resize
 from Models import *
 from Evaluation import LogCrossentropy
 from EA_components_OhGreat.EA import *

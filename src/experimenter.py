@@ -1,5 +1,3 @@
-import sys
-
 import torch
 import numpy as np
 from os import makedirs
@@ -22,6 +20,7 @@ def experiment( atk_img, models, attacks, es=None,
         - models: (dict) keys are the names of the folders and the items are the models.
                 example: models = {"vgg19": VGG, "resnet50": ResNet, "xception_v3": Xception}
         - attacks: (list) list of (str) attack methods to use.
+                example: attacks = ["R_channel_only", "all_channels", "shadow_noise", "1D_one-pixel", "3D_one-pixel"]
         - es: (dict) keys should be 'rec', 'mut', 'sel'. Values should be the functions of the strategy.
                 example: es = {'rec': GlobalDiscrete(), 'mut':IndividualSigma(), 'sel': CommaSelection()}
         - true_label: (int) real label whose confidence should be minimized.
@@ -35,9 +34,7 @@ def experiment( atk_img, models, attacks, es=None,
         - exp_dir: (str) experiment directory to save results.
         - batch_size: (int) size of the batch to pass to the model.
         - device: (str) defines the torch device to use for computations.
-        - verbose: (int) defines the intensity of prints.
-        attacks is an array with the names of attacks to use.
-        example: attacks = ["R_channel_only", "all_channels", "shadow_noise", "1D_one-pixel", "3D_one-pixel"]   
+        - verbose: (int) defines the intensity of prints.   
     """
     # create experiment dir if not existant
     if not exists(exp_dir):
@@ -112,5 +109,5 @@ def experiment( atk_img, models, attacks, es=None,
             f.write("\n")
 
 
-def bulk_experiment():
+def bulk_experiment(img_dir, models, attacks, es, ps, os,  budget, epsilon, downsample, patience, exp_dir, batch_size, device, verbose):
     pass

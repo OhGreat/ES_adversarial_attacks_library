@@ -1,6 +1,5 @@
 import torch
 from torch import Tensor, nn
-from copy import deepcopy
 
 
 class GenericModel(nn.Module):
