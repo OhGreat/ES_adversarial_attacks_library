@@ -16,7 +16,7 @@ def experiment( atk_img, models, attacks, es=None,
                 batch_size=32, device=None,
                 verbose=2):
     """Args:
-        - atk_img:
+        - atk_img: (str) path of the image to use for the attack.
         - models: (dict) keys are the names of the folders and the items are the models.
                 example: models = {"vgg19": VGG, "resnet50": ResNet, "xception_v3": Xception}
         - attacks: (list) list of (str) attack methods to use.
@@ -34,7 +34,7 @@ def experiment( atk_img, models, attacks, es=None,
         - exp_dir: (str) experiment directory to save results.
         - batch_size: (int) size of the batch to pass to the model.
         - device: (str) defines the torch device to use for computations.
-        - verbose: (int) defines the intensity of prints.   
+        - verbose: (int) defines the intensity of prints.
     """
     # create experiment dir if not existant
     if not exists(exp_dir):

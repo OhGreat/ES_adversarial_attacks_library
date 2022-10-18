@@ -24,17 +24,17 @@ The implemented `models` for Grad-CAM visualization are the following:
 ## Installation
 To use the repository a `Python 3` environment is required. Using Anaconda is recommended. After creating an anaconda environment you can use the following commands to install the required packages:
 
-To install pytorch:
-```bash
-conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch
-```
-To install the remaining packages you can use the `requirements.txt` file in the main directory as below:
+
+Optional: follow the Pytorch instructions <a href="https://pytorch.org/">here</a> to install the GPU version.
+
+Install the remaining packages from the `requirements.txt` file provided in the main directory as below:
 ```bash
 pip install -r requirements.txt
 ```
 
 
 ## Usage
+
 
 ### Models
 All implemented models can be found in the `src/Models.py` file. The `GenericModel` class represents a template that new implemented models must follow in order to be usable. Each architecture must have the following attributes and methods defined:
@@ -48,28 +48,59 @@ All implemented models can be found in the `src/Models.py` file. The `GenericMod
 
 - def self.get_activations(x): all the layers that we want to collect gradients from. 
 
+
 ### Grad-CAM
 The file `GradCAM.py` under the *src* folder contains the Grad-CAM implementation, which can be used as below:
 ```python
 grad_cam(model, img_path, true_label, result_dir, exp_name, device):
 ```
-where the following arguments can be defined:
-- model:
-- img_path:
-- true_label:
-- result_dir:
-- exp_name:
-- device:
+where:
+- model: model as defined in Models.py
+- img_path: (str) path to the input image
+- true_label: (int) true label of the image
+- result_dir: (str) directory to save results
+- exp_name: (str) name of the experiment and output image
+- device: (str) device to use for computations
+
+
+### Adversarial attack
+
+
 
 ### Single experiment
-
-### Bulk experiment
-(TODO): create a bulk experimenter to get statistics
-
-
+The experiment function under the `src/experimenter.py` file can used to run and compare attacks, on various models for a single image . The result statistics are logged in a **results.txt** file, together with the different subfolders for each model and attack, containing the resulting image and grad-CAM visualizations. The definition of the function is the following:
+```python
+def experiment( atk_img, models, attacks, es=None,
+                true_label=None, target_label=None,
+                ps=12, os=12*7, budget=1000, 
+                epsilon=0.05, downsample=None,
+                patience=5, exp_dir="results/temp",
+                batch_size=32, device=None,
+                verbose=2)
+```
+where:
+- atk_img: (str) path of the image to use for the attack.
+- models: (dict) keys are the names of the folders and the items are the models.
+        example: models = {"vgg19": VGG, "resnet50": ResNet, "xception_v3": Xception}
+- attacks: (list) list of (str) attack methods to use.
+        example: attacks = ["R_channel_only", "all_channels", "shadow_noise", "1D_one-pixel", "3D_one-pixel"]
+- es: (dict) keys should be 'rec', 'mut', 'sel'. Values should be the functions of the strategy.
+        example: es = {'rec': GlobalDiscrete(), 'mut':IndividualSigma(), 'sel': CommaSelection()}
+- true_label: (int) real label whose confidence should be minimized.
+- target_label: (int) value of the label we want to maximize confidence.
+- ps: (int) defines the number of parents.
+- os: (int) defines the number of ossprings per generation.
+- budget: (int) number of maximum fitness function evaluations.
+- epsilon: (float) constraints the noise to an interval of [-e,e].
+- downsample: (float)
+- patience: (int) number of epochs to wait before resetting sigmas, if no new best is found.
+- exp_dir: (str) experiment directory to save results.
+- batch_size: (int) size of the batch to pass to the model.
+- device: (str) defines the torch device to use for computations.
+- verbose: (int) defines the intensity of prints.
 
 ## Future Work
-- batch experimenter
+- bulk experimenter for multiple images, only to collect statistics.
 
 
 ## References
