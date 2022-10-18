@@ -52,9 +52,8 @@ def experiment( atk_img, models, attacks, es=None,
         if true_label is None:
             true_label = pred.argmax()
             print("Ground truth label not defined, using argmax of above prediction as true label.")
-        f = open(f_name, "a")
-        f.write(f"{mod_name}\t Label {true_label} original confidence: {np.round(pred[0][true_label].item()*100,2)}\n")
-        f.close()
+        with open(f_name, "a") as f:
+            f.write(f"{mod_name}\t Label {true_label} original confidence: {np.round(pred[0][true_label].item()*100,2)}\n")
 
         # create original gradCAM
         orig_path = f"{exp_dir}/{mod_name}/GradCAM_orig"
@@ -77,6 +76,7 @@ def experiment( atk_img, models, attacks, es=None,
                                 budget=budget, patience=patience,
                                 batch_size=batch_size, device=device,
                                 verbose=verbose, result_folder=curr_exp_dir)
+
             # gradcam of constructed noisy image
             grad_cam(model=model, device=device,
                 img_path=curr_exp_dir+"/attack_img.png",
@@ -90,10 +90,8 @@ def experiment( atk_img, models, attacks, es=None,
             with torch.no_grad():
                 pred = model.simple_eval(img_t.to(device))
             res_w = f"{mod_name}\t | atk: {attack}\t | confidence orig (label: {true_label}): {np.round(pred[0][true_label].item()*100,2)}\t | pred label: {pred.argmax().item()}, confidence: {np.round(pred[0].max().item()*100,2)}\n"
-            f = open(f_name, "a")
-            f.write(res_w)
-            f.close()
+            with open(f_name, "a") as f:
+                f.write(res_w)
         
-        f = open(f_name, "a")
-        f.write("\n")
-        f.close()
+        with open(f_name, "a") as f:
+            f.write("\n")

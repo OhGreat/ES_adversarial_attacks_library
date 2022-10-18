@@ -35,7 +35,7 @@ def adversarial_attack( model: GenericModel,
             - ps: parent size for the evolutionary algorithm
             - os : offspring size for the evolutionary algorithm
             - budget: maximum budget for the attack
-            - patience: generations to wait before resetting sigma if no new best is found
+            - patience: generations to wait before resetting sigmas if no new best is found
             - batch_size: size of the batch to pass to the model (not yet implemented)
             - device: defines the device to use for the computation. Can be either "cpu" or "cuda". 
             - verbose: debug variable to print information on the terminal
@@ -54,7 +54,7 @@ def adversarial_attack( model: GenericModel,
 
     # open original image
     orig_img = Image.open(atk_image)
-    # save the original image resized to match model image size
+    # save the original image resized to match model transforms shape
     img = orig_img.resize(model.transf_shape[1:])
     img.save(f'{result_folder}/orig_resized.png')
     # process image for model
@@ -111,8 +111,7 @@ def adversarial_attack( model: GenericModel,
     # process best found solution over our image
     ind = Population(pop_size=1,ind_size=best_noise.size, mutation=None)
     ind.individuals = np.reshape(best_noise, (1,*best_noise.shape))
-    noisy_img = eval_.__call__(ind, ret_sol=True)[0]
-    
+    noisy_img = eval_(ind, ret_sol=True)[0]
     
     # save complete attack image as png
     # moveaxis puts the channels in last dimension

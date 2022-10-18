@@ -7,13 +7,13 @@ The purpose of this work is twofold, aiming to quantify the robustness of differ
 
 ## Implementations
 A number of different evaluation functions has been created in order to model the `adversarial attacks`. More specifically, the following modes have been implemented:
-- "R_channel_only" : creates noise for each pixel in the red channel.
+- "R_channel" : creates noise for each pixel in the red channel.
 - "all_channels" : creates noise for each pixel in every channel. Similarly to what is presented in <a href="tiling_es">[3]</a>
-- "shadow_noise" : like the R_channel_only but applies the noise to all channels. 
+- "shadow_noise" : like the *R_channel* but applies the noise to all three channels. 
 - "3D_one-pixel" : one pixel noise for each channel as described in <a href="#one_pixel_atk">[2]</a>.
 - "1D_one-pixel" : like above but the noise is applied to only one channel.
 
-The implemented `models` for the Grad-CAM are the following:
+The implemented `models` for Grad-CAM visualization are the following:
 - VGG19
 - ResNet50
 - XceptionV3
@@ -35,6 +35,41 @@ pip install -r requirements.txt
 
 
 ## Usage
+
+### Models
+All implemented models can be found in the `src/Models.py` file. The `GenericModel` class represents a template that new implemented models must follow in order to be usable. Each architecture must have the following attributes and methods defined:
+- self.name: (str) Name of the defined model
+- self.weights: weights of the model, used to pull the transforms of pytorch models, (not required)
+- self.model: actual model used for predictions. Usually an existing pytorch architecture (e.g. VGG19 or ResNet)
+- self.gradients: (None) temporary placeholder to calculate gradients
+- self.input_shape: (tuple) model input shape in channels first format
+- self.transf_shape: (tuple) model transforms shape in channels first format
+- self.transforms: (T.Compose) pytorch transforms to use for preprocessing.
+
+- def self.get_activations(x): passes the input through all the layers that we 
+
+### Grad-CAM
+The file `GradCAM.py` under the *src* folder contains the Grad-CAM implementation, which can be used as below:
+```python
+grad_cam(model, img_path, true_label, result_dir, exp_name, device):
+```
+where the following arguments can be defined:
+- model:
+- img_path:
+- true_label:
+- result_dir:
+- exp_name:
+- device:
+
+### Single experiment
+
+### Bulk experiment
+(TODO): create a bulk experimenter to get statistics
+
+
+
+## Future Work
+- batch experimenter
 
 
 ## References
