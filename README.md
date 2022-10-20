@@ -36,68 +36,97 @@ pip install -r requirements.txt
 ## Usage
 
 
-### Models
-All implemented models can be found in the `src/Models.py` file. The `GenericModel` class represents a template that new implemented models must follow in order to be usable. Each architecture must have the following attributes and methods defined:
-- self.name: (str) Name of the defined model
-- self.weights: weights of the model, used to pull the transforms of pytorch models, (not required)
-- self.model: actual model used for predictions. Usually an existing pytorch architecture (e.g. VGG19 or ResNet)
-- self.gradients: (None) temporary placeholder to calculate gradients
-- self.input_shape: (tuple) model input shape in channels first format
-- self.transf_shape: (tuple) model transforms shape in channels first format
-- self.transforms: (T.Compose) pytorch transforms to use for preprocessing.
-
-- def self.get_activations(x): all the layers that we want to collect gradients from. 
-
-
-### Grad-CAM
-The file `GradCAM.py` under the *src* folder contains the Grad-CAM implementation, which can be used as below:
+### Adversarial attack
+The file `src/attack.py` contains the core function of the repository that allows us to perform adversarial attacks, defined as:
 ```python
-grad_cam(model, img_path, true_label, result_dir, exp_name, device):
+adversarial_attack( model: GenericModel,
+                    atk_image: str, atk_mode: int,
+                    true_label=None, target_label=None,
+                    es=None, ps=8, os=56,
+                    epsilon=0.05, downsample=None, 
+                    budget=1000, patience=3,
+                    batch_size=128, device=None,
+                    verbose=2, result_folder="temp")
 ```
 where:
-- model: model as defined in Models.py
-- img_path: (str) path to the input image
-- true_label: (int) true label of the image
-- result_dir: (str) directory to save results
-- exp_name: (str) name of the experiment and output image
-- device: (str) device to use for computations
-
-
-### Adversarial attack
-
+- `model`: Model to attack, should be one of the models implemented in the Models.py file
+- `atk_image`: (str) base image to use for the adversarial attack
+- `atk_mode`: (int) between 1 and 4 representing the attack method
+        - 1: attack only the first channel
+        - 2: attack all channels
+        - 3: attack all channels with the same noise (shadow approach)
+        - 4: one pixel attack methed
+- `true_label`: (int) real label the image belongs to
+- `target_label`: (int) targeted label to be used when doing a targeted attack
+- `epsilon`: (float) maximum value of the pixel perturbations
+- `ps`: (int) parent size for the evolutionary algorithm
+- `os`: (int) offspring size for the evolutionary algorithm
+- `budget`: (int) maximum budget for the attack
+- `patience`: (int) generations to wait before resetting sigmas if no new best is found
+- `batch_size`: (int) size of the batch to pass to the model (not yet implemented)
+- `device`: (str) defines the device to use for the computation. Can be either "cpu" or "cuda". 
+- `verbose`: (int) debug variable to print information on the terminal
+- `result_folder`: (str) directory used to save results
 
 
 ### Single experiment
 The experiment function under the `src/experimenter.py` file can used to run and compare attacks, on various models for a single image . The result statistics are logged in a **results.txt** file, together with the different subfolders for each model and attack, containing the resulting image and grad-CAM visualizations. The definition of the function is the following:
 ```python
-def experiment( atk_img, models, attacks, es=None,
-                true_label=None, target_label=None,
-                ps=12, os=12*7, budget=1000, 
-                epsilon=0.05, downsample=None,
-                patience=5, exp_dir="results/temp",
-                batch_size=32, device=None,
-                verbose=2)
+experiment( atk_img, models, attacks, es=None,
+            true_label=None, target_label=None,
+            ps=12, os=12*7, budget=1000, 
+            epsilon=0.05, downsample=None,
+            patience=5, exp_dir="results/temp",
+            batch_size=32, device=None,
+            verbose=2)
 ```
 where:
-- atk_img: (str) path of the image to use for the attack.
-- models: (dict) keys are the names of the folders and the items are the models.
+- `atk_img`: (str) path of the image to use for the attack.
+- `models`: (dict) keys are the names of the folders and the items are the models.
         example: models = {"vgg19": VGG, "resnet50": ResNet, "xception_v3": Xception}
-- attacks: (list) list of (str) attack methods to use.
+- `attacks`: (list) list of (str) attack methods to use.
         example: attacks = ["R_channel_only", "all_channels", "shadow_noise", "1D_one-pixel", "3D_one-pixel"]
-- es: (dict) keys should be 'rec', 'mut', 'sel'. Values should be the functions of the strategy.
+- `es`: (dict) keys should be 'rec', 'mut', 'sel'. Values should be the functions of the strategy.
         example: es = {'rec': GlobalDiscrete(), 'mut':IndividualSigma(), 'sel': CommaSelection()}
-- true_label: (int) real label whose confidence should be minimized.
-- target_label: (int) value of the label we want to maximize confidence.
-- ps: (int) defines the number of parents.
-- os: (int) defines the number of ossprings per generation.
-- budget: (int) number of maximum fitness function evaluations.
-- epsilon: (float) constraints the noise to an interval of [-e,e].
-- downsample: (float)
-- patience: (int) number of epochs to wait before resetting sigmas, if no new best is found.
-- exp_dir: (str) experiment directory to save results.
-- batch_size: (int) size of the batch to pass to the model.
-- device: (str) defines the torch device to use for computations.
-- verbose: (int) defines the intensity of prints.
+- `true_label`: (int) real label whose confidence should be minimized.
+- `target_label`: (int) value of the label we want to maximize confidence.
+- `ps`: (int) defines the number of parents.
+- `os`: (int) defines the number of ossprings per generation.
+- `budget`: (int) number of maximum fitness function evaluations.
+- `epsilon`: (float) constraints the noise to an interval of [-e,e].
+- `downsample`: (float)
+- `patience`: (int) number of epochs to wait before resetting sigmas, if no new best is found.
+- `exp_dir`: (str) experiment directory to save results.
+- `batch_size`: (int) size of the batch to pass to the model.
+- `device`: (str) defines the torch device to use for computations.
+- `verbose`: (int) defines the intensity of prints.
+
+
+### Grad-CAM
+The file `GradCAM.py` under the *src* folder contains the Grad-CAM implementation, which can be used as below:
+```python
+grad_cam(model, img_path, true_label, result_dir, exp_name, device)
+```
+where:
+- `model`: model as defined in Models.py
+- `img_path`: (str) path to the input image
+- `true_label`: (int) true label of the image
+- `result_dir`: (str) directory to save results
+- `exp_name`: (str) name of the experiment and output image
+- `device`: (str) device to use for computations
+
+
+### Models
+All implemented models can be found in the `src/Models.py` file. The `GenericModel` class represents a template that new implemented models must follow in order to be usable. Each architecture must have the following attributes and methods defined:
+- `self.name`: (str) Name of the defined model
+- `self.weights`: weights of the model, used to pull the transforms of pytorch models, (not required)
+- `self.model`: actual model used for predictions. Usually an existing pytorch architecture (e.g. VGG19 or ResNet)
+- `self.gradients`: (None) temporary placeholder to calculate gradients
+- `self.input_shape`: (tuple) model input shape in channels first format
+- `self.transf_shape`: (tuple) model transforms shape in channels first format
+- `self.transforms`: (T.Compose) pytorch transforms to use for preprocessing.
+
+- `def self.get_activations(x)`: all the layers that we want to collect gradients from, with x as an input.
 
 ## Future Work
 - bulk experimenter for multiple images, only to collect statistics.
