@@ -5,10 +5,10 @@ from os import makedirs
 from os.path import exists
 from Models import *
 from Evaluation import LogCrossentropy
-from EA_components_OhGreat.EA import *
-from EA_components_OhGreat.Mutation import *
-from EA_components_OhGreat.Selection import *
-from EA_components_OhGreat.Recombination import *
+from EA_numpy.EA import *
+from EA_numpy.Mutation import *
+from EA_numpy.Selection import *
+from EA_numpy.Recombination import *
 
 def adversarial_attack( model: GenericModel,
                         atk_image: str, atk_mode: int,

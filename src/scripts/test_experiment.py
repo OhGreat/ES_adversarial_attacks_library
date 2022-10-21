@@ -3,10 +3,10 @@ sys.path.append('.')
 sys.path.append('src')
 from src.experimenter import experiment
 from src.Models import *
-from EA_components_OhGreat.EA import *
-from EA_components_OhGreat.Mutation import *
-from EA_components_OhGreat.Selection import *
-from EA_components_OhGreat.Recombination import *
+from EA_numpy.EA import *
+from EA_numpy.Mutation import *
+from EA_numpy.Selection import *
+from EA_numpy.Recombination import *
 
 if __name__ == "__main__":
     # models = {"resnet50": ResNet50, "inception_v3": InceptionV3, "swin_b":Swin_b, "vit_b_16": ViT_B_16}
