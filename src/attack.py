@@ -5,38 +5,51 @@ from os import makedirs
 from os.path import exists
 from Models import *
 from Evaluation import LogCrossentropy
-from EA_numpy.EA import *
-from EA_numpy.Mutation import *
-from EA_numpy.Selection import *
-from EA_numpy.Recombination import *
+from EA_sequential.EA import *
+from EA_sequential.Mutation import *
+from EA_sequential.Selection import *
+from EA_sequential.Recombination import *
 
-def adversarial_attack( model: GenericModel,
-                        atk_image: str, atk_mode: int,
-                        true_label=None, target_label=None,
-                        es=None, ps=8, os=56,
-                        epsilon=0.05, downsample=None, 
-                        budget=1000, patience=3,
-                        batch_size=128, device=None,
-                        verbose=2, result_folder="temp"):
-    """ Parameters:
-            - model: Model to attack, should be one of the models implemented in the Models.py file
-            - atk_image: base image to use for the adversarial attack
-            - atk_mode: (int) between 1 and 4 representing the attack method
-                    - 1: attack only the first channel
-                    - 2: attack all channels
-                    - 3: attack all channels with the same noise (shadow approach)
-                    - 4: one pixel attack methed
-            - true_label: real label the image belongs to
-            - target_label: targeted label to be used when doing a targeted attack
-            - epsilon: maximum value of the pixel perturbations
-            - ps: parent size for the evolutionary algorithm
-            - os : offspring size for the evolutionary algorithm
-            - budget: maximum budget for the attack
-            - patience: generations to wait before resetting sigmas if no new best is found
-            - batch_size: size of the batch to pass to the model (not yet implemented)
-            - device: defines the device to use for the computation. Can be either "cpu" or "cuda". 
-            - verbose: debug variable to print information on the terminal
-            - result_folder: directory used to save results
+def adversarial_attack( 
+    model: GenericModel,
+    atk_image: str,
+    atk_mode: int,
+    true_label=None,
+    target_label=None,
+    es: dict =None,
+    ps=8,
+    os=56,
+    epsilon=0.05,
+    downsample=None, 
+    budget=1000,
+    patience=3,
+    batch_size=128,
+    device=None,
+    verbose=2,
+    result_folder="temp") -> None:
+    """ 
+    Args:
+    - model: Model to attack, should be one of the models implemented in the Models.py file
+    - atk_image: base image to use for the adversarial attack
+    - atk_mode: (int) between 1 and 4 representing the attack method
+            - 1: attack only the first channel
+            - 2: attack all channels
+            - 3: attack all channels with the same noise (shadow approach)
+            - 4: one pixel attack methed
+    - true_label: real label the image belongs to
+    - target_label: targeted label to be used when doing a targeted attack
+    - es: dictionary of evolutionary strategy classes
+            in the form of {'rec': Recombination(), 'mut': Mutation(), 'sel': Selection()}
+    - ps: parent size for the evolutionary algorithm
+    - os : offspring size for the evolutionary algorithm
+    - epsilon: maximum value of the pixel perturbations
+    - downsample: value between (0,1). Factor of which to downsample the input image
+    - budget: maximum budget for the attack
+    - patience: generations to wait before resetting sigmas if no new best is found
+    - batch_size: size of the batch to pass to the model (not yet implemented)
+    - device: defines the device to use for the computation. Can be either "cpu" or "cuda". 
+    - verbose: debug variable to print information on the terminal
+    - result_folder: directory used to save results
     """
 
     # create results directories if not existant
@@ -94,7 +107,7 @@ def adversarial_attack( model: GenericModel,
 
     # create EA
     es = EA(minimize=minimize, budget=budget, patience=patience, parents_size=ps, 
-            offspring_size=os, individual_size=ind_size, recombination=es['rec'],
+            offspring_size=os, individual_size=ind_size, discrete=None, recombination=es['rec'],
             mutation=es['mut'], selection=es['sel'], evaluation=eval_,verbose=verbose)
     # run EA
     atk_start = time.time()

@@ -3,10 +3,10 @@ sys.path.append('.')
 sys.path.append('src')
 from src.experimenter import experiment
 from src.Models import *
-from EA_numpy.EA import *
-from EA_numpy.Mutation import *
-from EA_numpy.Selection import *
-from EA_numpy.Recombination import *
+from EA_sequential.EA import *
+from EA_sequential.Mutation import *
+from EA_sequential.Selection import *
+from EA_sequential.Recombination import *
 
 if __name__ == "__main__":
     # models = {"resnet50": ResNet50, "inception_v3": InceptionV3, "swin_b":Swin_b, "vit_b_16": ViT_B_16}
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     es=None
     experiment( atk_img, models, attacks, es=es,
                 true_label=None, target_label=None,
-                epsilon=0.05, downsample=0.2,
+                epsilon=0.05, downsample=1,
                 ps=4, os=4*7, budget=300, patience=5,
                 batch_size=32, device=None,
                 verbose=2, exp_dir=exp_dir)

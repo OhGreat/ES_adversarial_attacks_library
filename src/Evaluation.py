@@ -3,7 +3,7 @@ import torch
 import numpy as np
 from scipy.ndimage import zoom
 from torchvision.transforms import Resize
-from EA_numpy.Population import Population
+from EA_sequential.Population import Population
 from Models import GenericModel
 from PIL import Image
 
