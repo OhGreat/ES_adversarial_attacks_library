@@ -9,8 +9,18 @@ from PIL import Image
 
 
 class LogCrossentropy:
-    def __init__(self, min, atk_mode, init_img: Image, label: int, epsilon: float, 
-                downsample: float, model: GenericModel, batch_size: int, device: str):
+    def __init__(
+        self,
+        min,
+        atk_mode,
+        init_img: Image,
+        label: int,
+        epsilon: float, 
+        downsample: float,
+        model: GenericModel,
+        batch_size: int,
+        device: str
+    ) -> None:
         self.device = device
         self.model = model
         self.epsilon = epsilon

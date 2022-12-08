@@ -1,32 +1,45 @@
 import torch
 import numpy as np
 from os import makedirs
-from os.path import exists
+from os.path import exists, join
 from PIL import Image
 from src.attack import adversarial_attack
 from src.GradCAM import grad_cam
 from src.Models import *
 
 
-def experiment( atk_img, models, attacks, es=None,
-                true_label=None, target_label=None,
-                ps=12, os=12*7, budget=1000, 
-                epsilon=0.05, downsample=None,
-                patience=5, exp_dir="results/temp",
-                batch_size=32, device=None,
-                verbose=2):
+def experiment(
+    atk_img,
+    models,
+    attacks,
+    es=None,
+    true_label=None,
+    target_label=None,
+    ps=12,
+    os=12*7,
+    discrete: bool = False,
+    budget=1000, 
+    epsilon=0.05,
+    downsample=None,
+    patience=5,
+    exp_dir="results/temp",
+    batch_size=32,
+    device=None,
+    verbose=2,
+    ) -> None:
     """Args:
         - atk_img: (str) path of the image to use for the attack.
         - models: (dict) keys are the names of the folders and the items are the models.
                 example: models = {"vgg19": VGG, "resnet50": ResNet, "xception_v3": Xception}
         - attacks: (list) list of (str) attack methods to use.
                 example: attacks = ["R_channel_only", "all_channels", "shadow_noise", "1D_one-pixel", "3D_one-pixel"]
-        - es: (dict) keys should be 'rec', 'mut', 'sel'. Values should be the functions of the strategy.
-                example: es = {'rec': GlobalDiscrete(), 'mut':IndividualSigma(), 'sel': CommaSelection()}
         - true_label: (int) real label whose confidence should be minimized.
         - target_label: (int) value of the label we want to maximize confidence.
+        - es: (dict) keys should be 'rec', 'mut', 'sel'. Values should be the functions of the strategy.
+                example: es = {'rec': GlobalDiscrete(), 'mut':IndividualSigma(), 'sel': CommaSelection()}
         - ps: (int) defines the number of parents.
         - os: (int) defines the number of ossprings per generation.
+        - discrete: (bool) defines a discrete problem formulation.
         - budget: (int) number of maximum fitness function evaluations.
         - epsilon: (float) constraints the noise to an interval of [-e,e].
         - downsample: (float)
@@ -80,24 +93,37 @@ def experiment( atk_img, models, attacks, es=None,
             curr_exp_dir = f"{exp_dir}/{mod_name}/{attack}"
             print("Curr experiment dir:", curr_exp_dir)
             # run attack
-            adversarial_attack(model=model, es=es,
-                                atk_image=atk_img, atk_mode=attack,
-                                 true_label=true_label, target_label=target_label,
-                                epsilon=epsilon, downsample=downsample,
-                                ps=ps, os=os,
-                                budget=budget, patience=patience,
-                                batch_size=batch_size, device=device,
-                                verbose=verbose, result_folder=curr_exp_dir)
+            adversarial_attack(
+                model=model,
+                atk_image=atk_img,
+                atk_mode=attack,
+                true_label=true_label,
+                target_label=target_label,
+                es=es,
+                ps=ps,
+                os=os,
+                discrete=discrete,
+                epsilon=epsilon,
+                downsample=downsample,
+                budget=budget,
+                patience=patience,
+                batch_size=batch_size,
+                device=device,
+                verbose=verbose,
+                result_folder=curr_exp_dir,
+            )
 
             # gradcam of constructed noisy image
-            grad_cam(model=model, device=device,
-                img_path=curr_exp_dir+"/attack_img.png",
+            grad_cam(
+                model=model,
+                device=device,
+                img_path=join(curr_exp_dir, "attack_img.png"),
                 true_label=true_label,
-                result_dir=curr_exp_dir+"/GradCAM", exp_name=f"grad" )
+                result_dir=join(curr_exp_dir, "GradCAM"), exp_name=f"grad" )
             print("")
 
             # write results to file
-            img_t = Image.open(curr_exp_dir+"/attack_img.png")
+            img_t = Image.open(join(curr_exp_dir, "attack_img.png"))
             img_t = model.transforms(img_t).unsqueeze(dim=0)
             with torch.no_grad():
                 pred = model.simple_eval(img_t.to(device))
@@ -109,5 +135,20 @@ def experiment( atk_img, models, attacks, es=None,
             f.write("\n")
 
 
-def bulk_experiment(img_dir, models, attacks, es, ps, os,  budget, epsilon, downsample, patience, exp_dir, batch_size, device, verbose):
+def bulk_experiment(
+    img_dir,
+    models,
+    attacks,
+    es,
+    ps,
+    os,
+    budget,
+    epsilon,
+    downsample,
+    patience,
+    exp_dir,
+    batch_size,
+    device,
+    verbose,
+) -> NotImplementedError:
     pass

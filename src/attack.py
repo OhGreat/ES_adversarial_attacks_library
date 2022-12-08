@@ -2,7 +2,7 @@ import torch
 import time
 from PIL import Image
 from os import makedirs
-from os.path import exists
+from os.path import exists, join
 from Models import *
 from Evaluation import LogCrossentropy
 from EA_sequential.EA import *
@@ -14,19 +14,21 @@ def adversarial_attack(
     model: GenericModel,
     atk_image: str,
     atk_mode: int,
-    true_label=None,
-    target_label=None,
+    true_label: int = None,
+    target_label: int = None,
     es: dict =None,
-    ps=8,
-    os=56,
-    epsilon=0.05,
-    downsample=None, 
-    budget=1000,
-    patience=3,
-    batch_size=128,
-    device=None,
-    verbose=2,
-    result_folder="temp") -> None:
+    ps: int = 8,
+    os: int = 56,
+    discrete: bool = False,
+    epsilon: float = 0.05,
+    downsample: bool = None, 
+    budget: int = 1000,
+    patience: int = 3,
+    batch_size: int = 128,
+    device: str = None,
+    verbose: int = 2,
+    result_folder: str = "temp",
+) -> None:
     """ 
     Args:
     - model: Model to attack, should be one of the models implemented in the Models.py file
@@ -55,8 +57,6 @@ def adversarial_attack(
     # create results directories if not existant
     if not exists(result_folder):
         makedirs(result_folder)
-        if result_folder[-1] == '/':
-            result_folder = result_folder[:-1]
 
     # choose best device if not predefined
     if device is None:
@@ -66,7 +66,7 @@ def adversarial_attack(
     orig_img = Image.open(atk_image)
     # save the original image resized to match model transforms shape
     img = orig_img.resize(model.transf_shape[1:])
-    img.save(f'{result_folder}/orig_resized.png')
+    img.save(join(result_folder, "orig_resized.png"))
     # process image for model
     img = model.transforms(img).unsqueeze(dim=0)
     print("Preprocessed input image shape:",img.shape)
@@ -98,17 +98,36 @@ def adversarial_attack(
         exit('Invalid evolutionary strategy. Make sure keys "rec", "mut" and "sel" are defined.')
 
     # define evaluation
-    eval_ = LogCrossentropy(min=minimize, atk_mode=atk_mode, init_img=orig_img, 
-                            epsilon=epsilon, downsample=downsample, label=label,
-                            model=model, batch_size=batch_size, device=device)
+    eval_ = LogCrossentropy(
+        min=minimize,
+        atk_mode=atk_mode,
+        init_img=orig_img, 
+        epsilon=epsilon,
+        downsample=downsample,
+        label=label,
+        model=model,
+        batch_size=batch_size,
+        device=device,
+    )
     
     # get individual size from evaluator
     ind_size = eval_.ind_size
 
     # create EA
-    es = EA(minimize=minimize, budget=budget, patience=patience, parents_size=ps, 
-            offspring_size=os, individual_size=ind_size, discrete=None, recombination=es['rec'],
-            mutation=es['mut'], selection=es['sel'], evaluation=eval_,verbose=verbose)
+    es = EA(
+        minimize=minimize,
+        budget=budget,
+        patience=patience,
+        parents_size=ps, 
+        offspring_size=os,
+        individual_size=ind_size,
+        discrete=discrete,
+        recombination=es['rec'],
+        mutation=es['mut'],
+        selection=es['sel'],
+        evaluation=eval_,
+        verbose=verbose,
+    )
     # run EA
     atk_start = time.time()
     best_noise, _ = es.run()
@@ -116,7 +135,7 @@ def adversarial_attack(
     print(f'Attack time: {np.round((atk_end- atk_start)/60,2)} minutes.')
     
     # save the best found noise as .npy file
-    np.save(file=f'{result_folder}/noise',arr=best_noise)
+    np.save(join(result_folder,"noise"), arr=best_noise)
 
     # process best found solution over our image
     ind = Population(pop_size=1,ind_size=best_noise.size, mutation=None)
@@ -126,7 +145,7 @@ def adversarial_attack(
     # save complete attack image as png
     # moveaxis puts the channels in last dimension
     noisy_img = Image.fromarray(np.moveaxis(noisy_img.numpy(),0,2))
-    noisy_img.save(f"{result_folder}/attack_img.png")
+    noisy_img.save(join(result_folder, "attack_img.png"))
 
     # evaluate our final image
     noisy_img = model.transforms(noisy_img).unsqueeze(dim=0)

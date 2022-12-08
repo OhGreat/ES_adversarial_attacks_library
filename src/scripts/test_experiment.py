@@ -28,6 +28,7 @@ if __name__ == "__main__":
     experiment( atk_img, models, attacks, es=es,
                 true_label=None, target_label=None,
                 epsilon=0.05, downsample=1,
-                ps=4, os=4*7, budget=300, patience=5,
+                ps=4, os=4*7, discrete=False,
+                budget=300, patience=5,
                 batch_size=32, device=None,
                 verbose=2, exp_dir=exp_dir)

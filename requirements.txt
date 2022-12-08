@@ -1,6 +1,7 @@
-numpy>=1.22.3
-opencv_python>=4.6.0.66
-Pillow>=9.2.0
-torch>=1.12.0
-torchvision>=0.13.0
-EA-framework-OhGreat >= 2.0
+numpy==1.22.3
+opencv_python==4.6.0.66
+Pillow==9.3.0
+scipy==1.8.1
+torch==1.12.1
+torchvision==0.13.1
+EA-framework==2.2.1

@@ -22,7 +22,7 @@ The implemented `models` for Grad-CAM visualization are the following:
 
 
 ## Installation
-To use the repository a `Python 3` environment is required. Using Anaconda is recommended. After creating an anaconda environment you can use the following commands to install the required packages:
+To use the repository a `Python 3` environment is required. The repository has been tested with `Python 3.10.4`. Using a virtual environment is recommended. After creating a virtual environment you can use the following commands to install the required packages:
 
 
 Optional: follow the Pytorch instructions <a href="https://pytorch.org/">here</a> to install the GPU version.
@@ -39,23 +39,34 @@ pip install -r requirements.txt
 ### Adversarial attack
 The file `src/attack.py` contains the core function of the repository that allows us to perform adversarial attacks, defined as:
 ```python
-adversarial_attack( model: GenericModel,
-                    atk_image: str, atk_mode: int,
-                    true_label=None, target_label=None,
-                    es=None, ps=8, os=56,
-                    epsilon=0.05, downsample=None, 
-                    budget=1000, patience=3,
-                    batch_size=128, device=None,
-                    verbose=2, result_folder="temp")
+def adversarial_attack( 
+    model: GenericModel,
+    atk_image: str,
+    atk_mode: int,
+    true_label: int = None,
+    target_label: int = None,
+    es: dict =None,
+    ps: int = 8,
+    os: int = 56,
+    discrete: bool = False,
+    epsilon: float = 0.05,
+    downsample: bool = None, 
+    budget: int = 1000,
+    patienceint: int = 3,
+    batch_size: int = 128,
+    device: str = None,
+    verbose: int = 2,
+    result_folder: str = "temp",
+) -> None:
 ```
 where:
 - `model`: Model to attack, should be one of the models implemented in the Models.py file
 - `atk_image`: (str) base image to use for the adversarial attack
 - `atk_mode`: (int) between 1 and 4 representing the attack method
-        - 1: attack only the first channel
-        - 2: attack all channels
-        - 3: attack all channels with the same noise (shadow approach)
-        - 4: one pixel attack methed
+    - 1: attack only the first channel
+    - 2: attack all channels
+    - 3: attack all channels with the same noise (shadow approach)
+    - 4: one pixel attack methed
 - `true_label`: (int) real label the image belongs to
 - `target_label`: (int) targeted label to be used when doing a targeted attack
 - `epsilon`: (float) maximum value of the pixel perturbations
