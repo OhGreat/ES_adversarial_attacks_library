@@ -26,7 +26,7 @@ if __name__ == "__main__":
     es = {'rec': GlobalDiscrete(), 'mut':IndividualSigma(), 'sel': CommaSelection()}
     es=None
     experiment( atk_img, models, attacks, es=es,
-                true_label=None, target_label=None,
+                true_label=None, target_label=34,
                 epsilon=0.05, downsample=1,
                 ps=4, os=4*7, discrete=False,
                 budget=300, patience=5,

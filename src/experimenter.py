@@ -133,22 +133,3 @@ def experiment(
         
         with open(f_name, "a") as f:
             f.write("\n")
-
-
-def bulk_experiment(
-    img_dir,
-    models,
-    attacks,
-    es,
-    ps,
-    os,
-    budget,
-    epsilon,
-    downsample,
-    patience,
-    exp_dir,
-    batch_size,
-    device,
-    verbose,
-) -> NotImplementedError:
-    pass

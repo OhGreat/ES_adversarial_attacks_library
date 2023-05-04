@@ -42,7 +42,7 @@ The file `src/attack.py` contains the core function of the repository that allow
 def adversarial_attack( 
     model: GenericModel,
     atk_image: str,
-    atk_mode: int,
+    atk_mode: str,
     true_label: int = None,
     target_label: int = None,
     es: dict =None,
@@ -61,12 +61,13 @@ def adversarial_attack(
 ```
 where:
 - `model`: Model to attack, should be one of the models implemented in the Models.py file
-- `atk_image`: (str) base image to use for the adversarial attack
+- `atk_image`: (str) path to the image to use for the adversarial attack
 - `atk_mode`: (int) between 1 and 4 representing the attack method
-    - 1: attack only the first channel
-    - 2: attack all channels
-    - 3: attack all channels with the same noise (shadow approach)
-    - 4: one pixel attack methed
+    - "R_channel": attack only the first channel.
+    - "all_channels": attack all channels.
+    - "shadow_noise": attack all channels with the same noise (shadow approach).
+    - "1D_one-pixel": attack only one channel of one pixel.
+    - "3D_one-pixel" attack one pixel on all channels.
 - `true_label`: (int) real label the image belongs to
 - `target_label`: (int) targeted label to be used when doing a targeted attack
 - `epsilon`: (float) maximum value of the pixel perturbations

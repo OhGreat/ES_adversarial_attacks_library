@@ -13,7 +13,7 @@ from EA_sequential.Recombination import *
 def adversarial_attack( 
     model: GenericModel,
     atk_image: str,
-    atk_mode: int,
+    atk_mode: str,
     true_label: int = None,
     target_label: int = None,
     es: dict =None,
@@ -33,11 +33,12 @@ def adversarial_attack(
     Args:
     - model: Model to attack, should be one of the models implemented in the Models.py file
     - atk_image: base image to use for the adversarial attack
-    - atk_mode: (int) between 1 and 4 representing the attack method
-            - 1: attack only the first channel
-            - 2: attack all channels
-            - 3: attack all channels with the same noise (shadow approach)
-            - 4: one pixel attack methed
+    - atk_mode: (str) between 1 and 4 representing the attack method
+            - R_channel: attack only the first channel.
+            - all_channels: attack all channels.
+            - shadow_noise: attack all channels with the same noise (shadow approach).
+            - 1D_one-pixel: attack only one channel of one pixel.
+            - 3D_one-pixel attack one pixel on all channels.
     - true_label: real label the image belongs to
     - target_label: targeted label to be used when doing a targeted attack
     - es: dictionary of evolutionary strategy classes

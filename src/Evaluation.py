@@ -1,11 +1,18 @@
-from copy import deepcopy
 import torch
 import numpy as np
+from PIL import Image
+from copy import deepcopy
 from scipy.ndimage import zoom
 from torchvision.transforms import Resize
-from EA_sequential.Population import Population
+
 from Models import GenericModel
-from PIL import Image
+from EA_sequential.Population import Population
+from EA_multiproc.EA_pool import EA_pool
+from EA_multiproc.Pop_multiproc import Population_multiproc, Individual
+from EA_multiproc.Rec_multiproc import GlobalDiscrete_multiproc
+from EA_multiproc.Mut_multiproc import IndividualSigma_multiproc
+from EA_multiproc.Sel_multiproc import CommaSelection_multiproc
+from EA_multiproc.Eval_multiproc import Ackley_multiproc
 
 
 class LogCrossentropy:
@@ -147,6 +154,100 @@ class LogCrossentropy:
                 inds = Resize(size=self.orig_img_norm.shape[2:]).forward(inds)
             # create noise + original image attacks
             solutions = (torch.add(self.orig_img_norm, inds).clip(0,1)*255).type(torch.uint8)
+
+        else:
+            exit('Please choose a correct attack modality.')
+
+        # make a copy if we need to return solution later
+        if ret_sol: sol_copy = deepcopy(solutions)
+
+        # apply model transformations to noised image attacks
+        solutions = self.model.transforms(solutions)
+
+        fitnesses = []
+        # temporary to print best accuracy of generation
+        curr_best_eval = self.worst_eval()
+        # evaluate solutions through model
+        with torch.no_grad():
+            for sol in solutions:
+                pred = self.model.simple_eval(sol.unsqueeze(dim=0).to(self.device))
+                # fitness is the logarithm of the predicted confidence
+                curr_eval = torch.log(pred[:, self.label]).item()
+                fitnesses.append(curr_eval)
+                # check best found confidence of generation for print
+                if (self.min and pred[:, self.label] < curr_best_eval) or (
+                    not self.min and pred[:, self.label] > curr_best_eval):
+                    curr_best_eval = pred[:, self.label]
+        # update individual fitnesses
+        X.fitnesses = np.array(fitnesses)
+        
+        if ret_sol: return sol_copy
+        else:
+            print("Current best confidence:",curr_best_eval.item())
+
+
+class IndividualLogCrossentropy:
+    """Implementation used for multiprocess and GPU libraries."""
+    def __init__(
+        self,
+        min,
+        atk_mode,
+        init_img: Image,
+        label: int,
+        epsilon: float, 
+        downsample: float,
+        model: GenericModel,
+        batch_size: int,
+        device: str
+    ) -> None:
+        self.device = device
+        self.model = model
+        self.epsilon = epsilon
+        self.downsample = downsample
+        self.img_shape = self.model.input_shape
+        self.label = label
+        self.min = min
+        self.atk_mode = atk_mode
+        self.orig_img = init_img.resize(model.transf_shape[1:])
+        # this is the processed image to be added to the generated noise
+        self.orig_img_norm = torch.unsqueeze((torch.tensor(
+                                            np.array(self.orig_img)
+                                            )/255.).permute((2,0,1)),dim=0)
+        # create downsampled image if required
+        if downsample is not None:
+            curr_img = zoom(np.array(self.orig_img), 
+                            zoom=(downsample,downsample,1), 
+                            order=1)
+            print("Downsampled image shape:", curr_img.shape)
+        else: curr_img = np.array(self.orig_img)
+        self.curr_img_shape = curr_img.shape
+
+        # define individual shape
+        if atk_mode == "shadow_noise":
+            self.ind_size = np.prod(curr_img.shape[:2])
+        else:
+            exit("Select a valid attack method.")
+        print("Problem dimension (individual size):", self.ind_size)
+
+    def worst_eval(self):
+        """ Return worst evaluation possible for the current problem configutation.
+        """
+        return np.inf if self.min else -np.inf
+
+    def __call__(self, X: Individual, ret_sol=False):
+        if self.atk_mode == "shadow_noise":  # apply noise as shadow on all channels
+            # clip individuals to epsilon interval
+            inds = torch.tensor(X.values).clip(-self.epsilon,self.epsilon)
+            # reshape to match population and image shape
+            inds = inds.reshape((1, 1, *self.curr_img_shape[:2])) 
+            if self.downsample is not None:
+                inds = Resize(size=self.orig_img_norm.shape[2:]).forward(inds)
+            # add same noise to all channels
+            solutions = [torch.add(inds[i],self.orig_img_norm[0,:]) for i in range(len(inds))]
+            # clip image, multiply by 255 and take integer values
+            solutions = (solutions.clip(0,1)*255).type(torch.uint8)
+            print(solutions.shape)
+            # TODO: fix
 
         else:
             exit('Please choose a correct attack modality.')
