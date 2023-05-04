@@ -149,7 +149,7 @@ All implemented models can be found in the `src/Models.py` file. The `GenericMod
 - `def self.get_activations(x)`: all the layers that we want to collect gradients from, with x as an input.
 
 ## Example
-<img src='https://github.com/OhGreat/ES_adversarial_attacks_library/blob/main/example.png>
+<img src='https://github.com/OhGreat/ES_adversarial_attacks_library/blob/main/example.png'>
 
 
 ## References
