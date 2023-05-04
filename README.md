@@ -39,6 +39,8 @@ pip install -r requirements.txt
 ### Adversarial attack
 The file `src/attack.py` contains the core function of the repository that allows us to perform adversarial attacks, defined as:
 ```python
+from src.attack import adversarial_attack
+
 def adversarial_attack( 
     model: GenericModel,
     atk_image: str,
@@ -84,6 +86,8 @@ where:
 ### Single experiment
 The experiment function under the `src/experimenter.py` file can used to run and compare attacks, on various models for a single image . The result statistics are logged in a **results.txt** file, together with the different subfolders for each model and attack, containing the resulting image and grad-CAM visualizations. The definition of the function is the following:
 ```python
+from src.experimenter import experimenter
+
 experiment( atk_img, models, attacks, es=None,
             true_label=None, target_label=None,
             ps=12, os=12*7, budget=1000, 
@@ -117,6 +121,8 @@ where:
 ### Grad-CAM
 The file `GradCAM.py` under the *src* folder contains the Grad-CAM implementation, which can be used as below:
 ```python
+from src.GradCAM import grad_cam
+
 grad_cam(model, img_path, true_label, result_dir, exp_name, device)
 ```
 where:
