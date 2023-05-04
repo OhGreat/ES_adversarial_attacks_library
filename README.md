@@ -4,6 +4,8 @@ A Grad-CAM implementation following the original publication in <a href="#gradca
 
 The purpose of this work is twofold, aiming to quantify the robustness of different (classification) DNN architectures on Black-Box attacks, while also qualitatively understanding how the attacks affect the focus of the model on the input images.
 
+You can scroll to the bottom of the readme to see an example.
+
 
 ## Implementations
 A number of different evaluation functions has been created in order to model the `adversarial attacks`. More specifically, the following modes have been implemented:
@@ -146,8 +148,8 @@ All implemented models can be found in the `src/Models.py` file. The `GenericMod
 
 - `def self.get_activations(x)`: all the layers that we want to collect gradients from, with x as an input.
 
-## Future Work
-- bulk experimenter for multiple images, only to collect statistics.
+## Example
+<img src='https://github.com/OhGreat/ES_adversarial_attacks_library/blob/main/example.png>
 
 
 ## References
